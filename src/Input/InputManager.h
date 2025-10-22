@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include "../Math/Vector2.h"
 
 class InputManager {
 public:
@@ -11,6 +12,9 @@ public:
         Up, Down, Left, Right,
         MouseLeft, MouseRight, MouseMiddle,
         Escape, Enter, Tab,
+        // Extended keys for PvP and stat allocation
+        Q, E, R, F,
+        Digit1, Digit2, Digit3, Digit4,
         F1, F2, F3, F4, F5,
         Count
     };
@@ -26,6 +30,16 @@ public:
         CameraZoom,
         Pause,
         Reset,
+        // PvP combat actions
+        Laser,
+        Punch,
+        Shield,
+        Teleport,
+        // Stat allocation actions
+        IncreaseStrength,
+        IncreaseDefense,
+        IncreaseStamina,
+        IncreaseAgility,
         Count
     };
 
@@ -144,6 +158,18 @@ public:
     bool getHandbrakeInput() const;
     Vector2 getCameraLookInput() const;
     float getCameraZoomInput() const;
+
+    // PvP combat input queries
+    bool getLaserPressed() const { return isActionJustPressed(Action::Laser); }
+    bool getPunchPressed() const { return isActionJustPressed(Action::Punch); }
+    bool getTeleportPressed() const { return isActionJustPressed(Action::Teleport); }
+    bool getShieldHeld() const { return isActionPressed(Action::Shield); }
+
+    // Stat allocation input queries
+    bool getIncreaseStrengthPressed() const { return isActionJustPressed(Action::IncreaseStrength); }
+    bool getIncreaseDefensePressed() const { return isActionJustPressed(Action::IncreaseDefense); }
+    bool getIncreaseStaminaPressed() const { return isActionJustPressed(Action::IncreaseStamina); }
+    bool getIncreaseAgilityPressed() const { return isActionJustPressed(Action::IncreaseAgility); }
     
     // Utility functions
     void clearInputState();

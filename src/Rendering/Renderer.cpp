@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
+#include <string>
 
 Renderer::Renderer() 
     : screenWidth(1920)
@@ -189,6 +190,10 @@ void Renderer::renderLine(const Vector3& start, const Vector3& end, const Vector
     // Line rendering implementation
     glLineWidth(renderState.lineWidth);
     // ... line rendering code
+}
+
+void Renderer::renderBillboardText(const Vector3& /*position*/, const std::string& /*text*/, const Vector3& /*color*/) {
+    // Placeholder: in this minimal engine we don't have text rendering.
 }
 
 void Renderer::renderGrid(int size, float spacing, const Vector3& color) {

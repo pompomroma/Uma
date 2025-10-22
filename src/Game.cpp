@@ -32,7 +32,8 @@ Game::Game()
     , autoSteer(false)
     , showHUD(true)
     , showDebugInfo(false)
-    , playerCar(nullptr) {
+    , playerCar(nullptr)
+    , playerCombatant(nullptr) {
 }
 
 Game::~Game() {
@@ -78,6 +79,9 @@ bool Game::initialize(int width, int height, const std::string& title) {
     
     // Initialize physics engine
     physicsEngine = std::make_unique<PhysicsEngine>();
+
+    // Initialize combat system
+    combatSystem = std::make_unique<CombatSystem>();
     
     // Initialize game systems
     initializeGame();
@@ -141,6 +145,7 @@ void Game::update(float dt) {
         handleInput();
         updatePhysics(dt);
         updateGameplay(dt);
+        updateCombat(dt);
         updateCamera(dt);
         updateParticles(dt);
         updateTrails(dt);
@@ -204,6 +209,37 @@ void Game::handleInput() {
     if (camera && zoomInput != 0.0f) {
         camera->handleScrollInput(zoomInput);
     }
+
+    // Handle combat input
+    handleCombatInput();
+}
+
+void Game::handleCombatInput() {
+    if (!inputManager || !combatSystem || !playerCombatant) return;
+    // Laser
+    if (inputManager->getLaserPressed()) {
+        combatSystem->fireLaser(playerCombatant);
+    }
+    // Punch
+    if (inputManager->getPunchPressed()) {
+        combatSystem->punch(playerCombatant);
+    }
+    // Teleport
+    if (inputManager->getTeleportPressed()) {
+        combatSystem->teleportForward(playerCombatant);
+    }
+    // Shield hold
+    combatSystem->setShield(playerCombatant, inputManager->getShieldHeld());
+
+    // Stat allocation: spend points when pressed
+    CombatStats& stats = playerCombatant->getStats();
+    auto trySpend = [&](int& statField){
+        if (stats.availablePoints > 0) { statField++; stats.availablePoints--; stats.recalcDerived(); }
+    };
+    if (inputManager->getIncreaseStrengthPressed()) trySpend(stats.strength);
+    if (inputManager->getIncreaseDefensePressed()) trySpend(stats.defense);
+    if (inputManager->getIncreaseStaminaPressed()) trySpend(stats.stamina);
+    if (inputManager->getIncreaseAgilityPressed()) trySpend(stats.agility);
 }
 
 void Game::setState(GameState state) {
@@ -353,6 +389,15 @@ void Game::renderGame() {
     // Render particles and effects
     renderParticles();
     renderTrails();
+
+    // Render temporary laser debug lines if any
+    if (combatSystem) {
+        for (const auto& laser : combatSystem->getActiveLasers()) {
+            renderer->setLineWidth(3.0f);
+            renderer->renderLine(laser.start, laser.end, laser.color);
+            renderer->setLineWidth(1.0f);
+        }
+    }
 }
 
 void Game::renderUI() {
@@ -361,6 +406,7 @@ void Game::renderUI() {
 
 void Game::renderHUD() {
     // HUD rendering
+    // Optionally, display basic combat HUD via debug info shader
 }
 
 void Game::renderDebugInfo() {
@@ -383,6 +429,12 @@ void Game::updateGameplay(float dt) {
     updateTiming();
     checkWinCondition();
     updateAI(dt);
+}
+
+void Game::updateCombat(float dt) {
+    if (combatSystem) {
+        combatSystem->update(dt);
+    }
 }
 
 void Game::updateLapProgress() {
@@ -517,6 +569,16 @@ void Game::initializeCars() {
     // Add car to physics engine
     if (physicsEngine) {
         physicsEngine->addCar(playerCar);
+    }
+
+    // Register combatant for player
+    if (combatSystem && playerCar) {
+        playerCombatant = combatSystem->registerCarCombatant(playerCar);
+        // grant some starting points
+        if (playerCombatant) {
+            playerCombatant->getStats().availablePoints = 4;
+            playerCombatant->getStats().recalcDerived();
+        }
     }
 }
 

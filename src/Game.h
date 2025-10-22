@@ -5,6 +5,7 @@
 #include "Rendering/Renderer.h"
 #include "Input/InputManager.h"
 #include "World/Track.h"
+#include "Combat/CombatSystem.h"
 #include <memory>
 #include <vector>
 
@@ -24,10 +25,12 @@ private:
     std::unique_ptr<PhysicsEngine> physicsEngine;
     std::unique_ptr<Camera> camera;
     std::unique_ptr<Track> track;
+    std::unique_ptr<CombatSystem> combatSystem;
     
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
     Car* playerCar;
+    Combatant* playerCombatant;
     
     // Game state
     GameState currentState;
@@ -80,6 +83,7 @@ public:
     void update(float deltaTime);
     void render();
     void handleInput();
+    void handleCombatInput();
     
     // Game state management
     void setState(GameState state);
@@ -126,6 +130,7 @@ public:
     
     // Gameplay
     void updateGameplay(float deltaTime);
+    void updateCombat(float deltaTime);
     void updateLapProgress();
     void updateTiming();
     void checkWinCondition();
