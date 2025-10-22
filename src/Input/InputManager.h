@@ -1,9 +1,14 @@
 #pragma once
 #include "../Math/Vector2.h"
+#include "../Platform/PlatformDetect.h"
 #include <unordered_map>
 #include <functional>
 #include <vector>
 #include <string>
+
+#if PLATFORM_MOBILE
+class TouchInputManager;
+#endif
 
 class InputManager {
 public:
@@ -66,6 +71,10 @@ private:
     
     bool isMouseLookActive;
     bool isInputEnabled;
+    
+#if PLATFORM_MOBILE
+    TouchInputManager* touchInputManager;
+#endif
     
     // Input callbacks
     std::function<void(float)> onAccelerate;
@@ -169,6 +178,13 @@ public:
     bool getHandbrakeInput() const;
     Vector2 getCameraLookInput() const;
     float getCameraZoomInput() const;
+    
+#if PLATFORM_MOBILE
+    // Mobile-specific input
+    TouchInputManager* getTouchInputManager() const { return touchInputManager; }
+    void setTouchInputManager(TouchInputManager* mgr);
+    void processTouchInput(int touchId, float x, float y, int phase, float pressure = 1.0f);
+#endif
     
     // Utility functions
     void clearInputState();
