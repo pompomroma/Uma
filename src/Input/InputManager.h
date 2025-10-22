@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include "../Math/Vector2.h"
 
 class InputManager {
 public:
@@ -12,6 +13,10 @@ public:
         MouseLeft, MouseRight, MouseMiddle,
         Escape, Enter, Tab,
         F1, F2, F3, F4, F5,
+        Q, E, R, T, Y, U, I, O, P,
+        F, G, H, J, K, L,
+        Z, X, C, V, B, N, M,
+        Num1, Num2, Num3, Num4, Num5,
         Count
     };
 
@@ -26,6 +31,22 @@ public:
         CameraZoom,
         Pause,
         Reset,
+        // Combat actions
+        FireLaser,
+        FirePlasma,
+        FireMissile,
+        FireEnergyBall,
+        FistAttack,
+        ActivateShield,
+        Teleport,
+        Dash,
+        EnergyBurst,
+        Heal,
+        ToggleCombatMode,
+        AimUp,
+        AimDown,
+        AimLeft,
+        AimRight,
         Count
     };
 
@@ -68,6 +89,20 @@ private:
     std::function<void(float)> onCameraZoom;
     std::function<void()> onPause;
     std::function<void()> onReset;
+    
+    // Combat callbacks
+    std::function<void()> onFireLaser;
+    std::function<void()> onFirePlasma;
+    std::function<void()> onFireMissile;
+    std::function<void()> onFireEnergyBall;
+    std::function<void()> onFistAttack;
+    std::function<void()> onActivateShield;
+    std::function<void(Vector2)> onTeleport; // Mouse position for teleport target
+    std::function<void()> onDash;
+    std::function<void()> onEnergyBurst;
+    std::function<void()> onHeal;
+    std::function<void(bool)> onToggleCombatMode;
+    std::function<void(float, float)> onAim; // Aim direction input
 
 public:
     InputManager();
@@ -130,6 +165,20 @@ public:
     void setPauseCallback(std::function<void()> callback);
     void setResetCallback(std::function<void()> callback);
     
+    // Combat callback registration
+    void setFireLaserCallback(std::function<void()> callback);
+    void setFirePlasmaCallback(std::function<void()> callback);
+    void setFireMissileCallback(std::function<void()> callback);
+    void setFireEnergyBallCallback(std::function<void()> callback);
+    void setFistAttackCallback(std::function<void()> callback);
+    void setActivateShieldCallback(std::function<void()> callback);
+    void setTeleportCallback(std::function<void(Vector2)> callback);
+    void setDashCallback(std::function<void()> callback);
+    void setEnergyBurstCallback(std::function<void()> callback);
+    void setHealCallback(std::function<void()> callback);
+    void setToggleCombatModeCallback(std::function<void(bool)> callback);
+    void setAimCallback(std::function<void(float, float)> callback);
+    
     // Input state management
     void setMouseLookActive(bool active);
     void setInputEnabled(bool enabled);
@@ -144,6 +193,10 @@ public:
     bool getHandbrakeInput() const;
     Vector2 getCameraLookInput() const;
     float getCameraZoomInput() const;
+    
+    // Combat input values
+    Vector2 getAimInput() const;
+    bool getCombatModeToggle() const;
     
     // Utility functions
     void clearInputState();

@@ -5,6 +5,9 @@
 #include "Rendering/Renderer.h"
 #include "Input/InputManager.h"
 #include "World/Track.h"
+#include "Combat/CombatSystem.h"
+#include "UI/CombatHUD.h"
+#include "Effects/ParticleSystem.h"
 #include <memory>
 #include <vector>
 
@@ -14,7 +17,9 @@ public:
         Menu,
         Playing,
         Paused,
-        GameOver
+        GameOver,
+        Combat,         // PvP combat mode
+        CombatPaused    // Combat mode paused
     };
 
 private:
@@ -24,6 +29,9 @@ private:
     std::unique_ptr<PhysicsEngine> physicsEngine;
     std::unique_ptr<Camera> camera;
     std::unique_ptr<Track> track;
+    std::unique_ptr<CombatSystem> combatSystem;
+    std::unique_ptr<CombatHUD> combatHUD;
+    std::unique_ptr<ParticleSystem> particleSystem;
     
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
@@ -66,6 +74,12 @@ private:
     bool autoSteer;
     bool showHUD;
     bool showDebugInfo;
+    
+    // Combat settings
+    bool combatModeEnabled;
+    bool pvpMode;
+    int maxPlayers;
+    float matchTimeLimit;
 
 public:
     Game();
@@ -116,6 +130,20 @@ public:
     void onPause();
     void onReset();
     
+    // Combat input handling
+    void onFireLaser();
+    void onFirePlasma();
+    void onFireMissile();
+    void onFireEnergyBall();
+    void onFistAttack();
+    void onActivateShield();
+    void onTeleport(Vector2 mousePos);
+    void onDash();
+    void onEnergyBurst();
+    void onHeal();
+    void onToggleCombatMode(bool enabled);
+    void onAim(float deltaX, float deltaY);
+    
     // Rendering
     void renderGame();
     void renderUI();
@@ -123,6 +151,9 @@ public:
     void renderDebugInfo();
     void renderMenu();
     void renderPauseMenu();
+    void renderCombatHUD();
+    void renderProjectiles();
+    void renderCombatEffects();
     
     // Gameplay
     void updateGameplay(float deltaTime);
@@ -131,6 +162,13 @@ public:
     void checkWinCondition();
     void spawnCars();
     void updateAI(float deltaTime);
+    
+    // Combat gameplay
+    void updateCombat(float deltaTime);
+    void startCombatMatch();
+    void endCombatMatch();
+    void addPlayerToCombat(Car* car);
+    void removePlayerFromCombat(Car* car);
     
     // Settings
     void setScreenSize(int width, int height);
@@ -146,6 +184,10 @@ public:
     void setAutoSteer(bool enabled);
     void setShowHUD(bool show);
     void setShowDebugInfo(bool show);
+    void setCombatModeEnabled(bool enabled);
+    void setPvpMode(bool enabled);
+    void setMaxPlayers(int max);
+    void setMatchTimeLimit(float time);
     
     // Getters
     bool getIsRunning() const { return isRunning; }
@@ -169,6 +211,7 @@ private:
     void initializeTrack();
     void initializeCamera();
     void initializeInput();
+    void initializeCombat();
     void updatePhysics(float deltaTime);
     void updateAudio(float deltaTime);
     void updateUI(float deltaTime);
@@ -179,4 +222,6 @@ private:
     void renderTrails();
     void updateParticles(float deltaTime);
     void updateTrails(float deltaTime);
+    void setupCombatCallbacks();
+    Vector3 screenToWorldPosition(Vector2 screenPos);
 };

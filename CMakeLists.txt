@@ -18,6 +18,8 @@ set(SOURCES
     src/main.cpp
     src/Game.cpp
     src/Game.h
+    src/Math/Vector2.cpp
+    src/Math/Vector2.h
     src/Math/Vector3.cpp
     src/Math/Vector3.h
     src/Math/Matrix4.cpp
@@ -38,6 +40,18 @@ set(SOURCES
     src/World/Track.h
     src/Utils/Shader.cpp
     src/Utils/Shader.h
+    src/Combat/PlayerStats.cpp
+    src/Combat/PlayerStats.h
+    src/Combat/PlayerAbilities.cpp
+    src/Combat/PlayerAbilities.h
+    src/Combat/Projectile.cpp
+    src/Combat/Projectile.h
+    src/Combat/CombatSystem.cpp
+    src/Combat/CombatSystem.h
+    src/UI/CombatHUD.cpp
+    src/UI/CombatHUD.h
+    src/Effects/ParticleSystem.cpp
+    src/Effects/ParticleSystem.h
 )
 
 # Create executable

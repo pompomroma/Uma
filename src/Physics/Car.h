@@ -80,6 +80,15 @@ private:
     bool isGrounded;
     float groundHeight;
     Vector3 groundNormal;
+    
+    // Combat state
+    bool handbrakeInput;
+    bool combatMode;
+    Vector3 aimDirection;
+    float health;
+    float maxHealth;
+    bool isInvulnerable;
+    float invulnerabilityTimer;
 
 public:
     Car();
@@ -100,6 +109,15 @@ public:
     bool getIsBoosting() const { return isBoosting; }
     float getSpeedEffectIntensity() const { return speedEffectIntensity; }
     
+    // Combat getters
+    bool getCombatMode() const { return combatMode; }
+    Vector3 getAimDirection() const { return aimDirection; }
+    float getHealth() const { return health; }
+    float getMaxHealth() const { return maxHealth; }
+    float getHealthPercentage() const { return maxHealth > 0.0f ? health / maxHealth : 0.0f; }
+    bool getIsInvulnerable() const { return isInvulnerable; }
+    bool getHandbrakeInput() const { return handbrakeInput; }
+    
     // Setters
     void setPosition(const Vector3& pos);
     void setVelocity(const Vector3& vel);
@@ -110,11 +128,19 @@ public:
     void setBrakeForce(float force);
     void setFriction(float fric);
     
+    // Combat setters
+    void setCombatMode(bool enabled);
+    void setAimDirection(const Vector3& direction);
+    void setHealth(float hp);
+    void setMaxHealth(float maxHp);
+    void setInvulnerable(bool invulnerable, float duration = 0.0f);
+    
     // Input handling
     void setThrottle(float throttle);
     void setBrake(float brake);
     void setSteer(float steer);
     void setBoost(bool boost);
+    void setHandbrake(bool handbrake);
     
     // Physics update
     void update(float deltaTime);
@@ -123,6 +149,7 @@ public:
     void updateEngine(float deltaTime);
     void updateBoost(float deltaTime);
     void updateVisualEffects(float deltaTime);
+    void updateCombat(float deltaTime);
     
     // Collision and ground detection
     void checkGroundCollision();
@@ -135,9 +162,18 @@ public:
     void deactivateBoost();
     void rechargeBoost(float deltaTime);
     
+    // Combat functions
+    void takeDamage(float damage);
+    void heal(float amount);
+    bool isDead() const { return health <= 0.0f; }
+    void kill();
+    void respawn();
+    void respawn(const Vector3& position);
+    
     // Utility functions
     Matrix4 getTransformMatrix() const;
     Vector3 getWheelPosition(int wheelIndex) const;
+    Vector3 getProjectileSpawnPosition() const;
     void reset();
     void resetToPosition(const Vector3& pos);
     
