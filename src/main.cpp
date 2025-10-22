@@ -14,6 +14,11 @@ int main() {
         }
         
         std::cout << "3D Racing Game initialized successfully!" << std::endl;
+        
+        // Enable PvP mode
+        game.setPvPEnabled(true);
+        game.setCombatMode(true);
+        
         std::cout << "Controls:" << std::endl;
         std::cout << "  WASD - Car movement" << std::endl;
         std::cout << "  Mouse - Camera look" << std::endl;
@@ -21,6 +26,12 @@ int main() {
         std::cout << "  Shift - Handbrake" << std::endl;
         std::cout << "  ESC - Pause" << std::endl;
         std::cout << "  F1 - Reset" << std::endl;
+        std::cout << std::endl;
+        std::cout << "PvP Controls:" << std::endl;
+        std::cout << "  Right Mouse - Laser Attack" << std::endl;
+        std::cout << "  Ctrl - Fist Attack" << std::endl;
+        std::cout << "  F2 - Shield" << std::endl;
+        std::cout << "  F3 - Teleport" << std::endl;
         
         // Run game
         game.run();

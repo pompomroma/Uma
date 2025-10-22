@@ -26,6 +26,11 @@ public:
         CameraZoom,
         Pause,
         Reset,
+        // PvP Actions
+        LaserAttack,
+        FistAttack,
+        Shield,
+        Teleport,
         Count
     };
 
@@ -68,6 +73,12 @@ private:
     std::function<void(float)> onCameraZoom;
     std::function<void()> onPause;
     std::function<void()> onReset;
+    
+    // PvP callbacks
+    std::function<void()> onLaserAttack;
+    std::function<void()> onFistAttack;
+    std::function<void()> onShield;
+    std::function<void()> onTeleport;
 
 public:
     InputManager();
@@ -129,6 +140,12 @@ public:
     void setCameraZoomCallback(std::function<void(float)> callback);
     void setPauseCallback(std::function<void()> callback);
     void setResetCallback(std::function<void()> callback);
+    
+    // PvP callback registration
+    void setLaserAttackCallback(std::function<void()> callback);
+    void setFistAttackCallback(std::function<void()> callback);
+    void setShieldCallback(std::function<void()> callback);
+    void setTeleportCallback(std::function<void()> callback);
     
     // Input state management
     void setMouseLookActive(bool active);

@@ -5,6 +5,7 @@
 #include "Rendering/Renderer.h"
 #include "Input/InputManager.h"
 #include "World/Track.h"
+#include "Player/PvPMechanics.h"
 #include <memory>
 #include <vector>
 
@@ -24,6 +25,7 @@ private:
     std::unique_ptr<PhysicsEngine> physicsEngine;
     std::unique_ptr<Camera> camera;
     std::unique_ptr<Track> track;
+    std::unique_ptr<PvPMechanics> pvpMechanics;
     
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
@@ -66,6 +68,10 @@ private:
     bool autoSteer;
     bool showHUD;
     bool showDebugInfo;
+    
+    // PvP settings
+    bool pvpEnabled;
+    bool combatMode;
 
 public:
     Game();
@@ -116,6 +122,12 @@ public:
     void onPause();
     void onReset();
     
+    // PvP input handling
+    void onLaserAttack();
+    void onFistAttack();
+    void onShield();
+    void onTeleport();
+    
     // Rendering
     void renderGame();
     void renderUI();
@@ -146,6 +158,12 @@ public:
     void setAutoSteer(bool enabled);
     void setShowHUD(bool show);
     void setShowDebugInfo(bool show);
+    
+    // PvP settings
+    void setPvPEnabled(bool enabled);
+    void setCombatMode(bool enabled);
+    bool getPvPEnabled() const { return pvpEnabled; }
+    bool getCombatMode() const { return combatMode; }
     
     // Getters
     bool getIsRunning() const { return isRunning; }
@@ -179,4 +197,8 @@ private:
     void renderTrails();
     void updateParticles(float deltaTime);
     void updateTrails(float deltaTime);
+    
+    // PvP rendering
+    void renderPvPEffects();
+    void renderPlayerStats();
 };

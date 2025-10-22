@@ -31,7 +31,9 @@ Car::Car()
     , speedEffectIntensity(0.0f)
     , isGrounded(false)
     , groundHeight(0.0f)
-    , groundNormal(0.0f, 1.0f, 0.0f) {
+    , groundNormal(0.0f, 1.0f, 0.0f)
+    , isPlayer(false)
+    , playerId(0) {
     
     // Initialize wheels
     wheels[0].position = Vector3(-1.0f, -0.5f, 1.5f);  // Front left
@@ -147,6 +149,11 @@ void Car::update(float deltaTime) {
     updateEngine(deltaTime);
     updateBoost(deltaTime);
     updateVisualEffects(deltaTime);
+    
+    // Update player stats if this is a player
+    if (isPlayer) {
+        playerStats.update(deltaTime);
+    }
     
     // Update boost cooldown
     if (boostCooldown > 0.0f) {
@@ -360,6 +367,77 @@ void Car::reset() {
 void Car::resetToPosition(const Vector3& pos) {
     reset();
     position = pos;
+}
+
+void Car::setAsPlayer(bool isPlayer, int playerId) {
+    this->isPlayer = isPlayer;
+    this->playerId = playerId;
+    if (isPlayer) {
+        playerStats.initialize();
+    }
+}
+
+bool Car::performLaserAttack(const Vector3& direction) {
+    if (!isPlayer || !canAttack()) return false;
+    
+    // Consume stamina and perform attack
+    float damage = playerStats.performLaserAttack();
+    if (damage > 0.0f) {
+        // The actual laser projectile would be handled by the PvP system
+        return true;
+    }
+    return false;
+}
+
+bool Car::performFistAttack(Car* target) {
+    if (!isPlayer || !canAttack() || !target) return false;
+    
+    // Check if target is in range
+    float distance = (target->getPosition() - position).length();
+    if (distance > playerStats.fistRange) return false;
+    
+    // Consume stamina and perform attack
+    float damage = playerStats.performFistAttack();
+    if (damage > 0.0f) {
+        // Apply damage to target
+        target->getPlayerStats().takeDamage(damage);
+        return true;
+    }
+    return false;
+}
+
+bool Car::activateShield() {
+    if (!isPlayer || !canUseAbility()) return false;
+    
+    playerStats.activateShield();
+    return true;
+}
+
+bool Car::performTeleport(const Vector3& targetPosition) {
+    if (!isPlayer || !playerStats.canTeleport()) return false;
+    
+    // Check if target position is in range
+    float distance = (targetPosition - position).length();
+    if (distance > playerStats.teleportRange) return false;
+    
+    // Perform teleport
+    if (playerStats.performTeleport(targetPosition)) {
+        setPosition(targetPosition);
+        return true;
+    }
+    return false;
+}
+
+bool Car::canAttack() const {
+    return isPlayer && playerStats.canAttack();
+}
+
+bool Car::canUseAbility() const {
+    return isPlayer && playerStats.canUseAbility();
+}
+
+bool Car::isAlive() const {
+    return !isPlayer || playerStats.isAlive();
 }
 
 void Car::debugDraw() const {

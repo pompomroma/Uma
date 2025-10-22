@@ -32,6 +32,8 @@ Game::Game()
     , autoSteer(false)
     , showHUD(true)
     , showDebugInfo(false)
+    , pvpEnabled(false)
+    , combatMode(false)
     , playerCar(nullptr) {
 }
 
@@ -79,6 +81,10 @@ bool Game::initialize(int width, int height, const std::string& title) {
     // Initialize physics engine
     physicsEngine = std::make_unique<PhysicsEngine>();
     
+    // Initialize PvP mechanics
+    pvpMechanics = std::make_unique<PvPMechanics>();
+    pvpMechanics->initialize();
+    
     // Initialize game systems
     initializeGame();
     
@@ -102,6 +108,7 @@ void Game::shutdown() {
     physicsEngine.reset();
     camera.reset();
     track.reset();
+    pvpMechanics.reset();
     cars.clear();
     playerCar = nullptr;
     
@@ -144,6 +151,11 @@ void Game::update(float dt) {
         updateCamera(dt);
         updateParticles(dt);
         updateTrails(dt);
+        
+        // Update PvP mechanics
+        if (pvpMechanics) {
+            pvpMechanics->update(dt);
+        }
     }
     
     updateUI(dt);
@@ -171,6 +183,9 @@ void Game::render() {
     
     if (showHUD) {
         renderHUD();
+        if (pvpEnabled) {
+            renderPlayerStats();
+        }
     }
     
     if (showDebugInfo) {
@@ -291,6 +306,12 @@ void Game::setupInputCallbacks() {
     inputManager->setCameraZoomCallback([this](float delta) { onCameraZoom(delta); });
     inputManager->setPauseCallback([this]() { onPause(); });
     inputManager->setResetCallback([this]() { onReset(); });
+    
+    // PvP input callbacks
+    inputManager->setLaserAttackCallback([this]() { onLaserAttack(); });
+    inputManager->setFistAttackCallback([this]() { onFistAttack(); });
+    inputManager->setShieldCallback([this]() { onShield(); });
+    inputManager->setTeleportCallback([this]() { onTeleport(); });
 }
 
 void Game::onAccelerate(float input) {
@@ -333,6 +354,37 @@ void Game::onReset() {
     restart();
 }
 
+void Game::onLaserAttack() {
+    if (!pvpEnabled || !playerCar) return;
+    
+    Vector3 direction = playerCar->getForward();
+    playerCar->performLaserAttack(direction);
+}
+
+void Game::onFistAttack() {
+    if (!pvpEnabled || !playerCar || !pvpMechanics) return;
+    
+    // Find nearest enemy
+    Car* target = pvpMechanics->findNearestEnemy(playerCar, 5.0f);
+    if (target) {
+        playerCar->performFistAttack(target);
+    }
+}
+
+void Game::onShield() {
+    if (!pvpEnabled || !playerCar) return;
+    
+    playerCar->activateShield();
+}
+
+void Game::onTeleport() {
+    if (!pvpEnabled || !playerCar || !pvpMechanics) return;
+    
+    // Teleport forward in the direction the car is facing
+    Vector3 targetPosition = playerCar->getPosition() + playerCar->getForward() * 10.0f;
+    playerCar->performTeleport(targetPosition);
+}
+
 void Game::renderGame() {
     if (!renderer) return;
     
@@ -353,6 +405,11 @@ void Game::renderGame() {
     // Render particles and effects
     renderParticles();
     renderTrails();
+    
+    // Render PvP effects
+    if (pvpEnabled) {
+        renderPvPEffects();
+    }
 }
 
 void Game::renderUI() {
@@ -512,11 +569,38 @@ void Game::initializeCars() {
     // Create player car
     auto playerCarPtr = std::make_unique<Car>(Vector3(0.0f, 0.0f, 0.0f));
     playerCar = playerCarPtr.get();
+    playerCar->setAsPlayer(true, 0); // Set as player with ID 0
     addCar(std::move(playerCarPtr));
     
     // Add car to physics engine
     if (physicsEngine) {
         physicsEngine->addCar(playerCar);
+    }
+    
+    // Add player to PvP system
+    if (pvpMechanics) {
+        pvpMechanics->addPlayer(playerCar);
+    }
+    
+    // Create AI cars for PvP
+    if (pvpEnabled) {
+        for (int i = 0; i < 3; i++) {
+            float angle = (float)i / 3.0f * 2.0f * M_PI;
+            Vector3 aiPosition(
+                std::cos(angle) * 20.0f,
+                0.0f,
+                std::sin(angle) * 20.0f
+            );
+            
+            auto aiCarPtr = std::make_unique<Car>(aiPosition);
+            Car* aiCar = aiCarPtr.get();
+            aiCar->setAsPlayer(true, i + 1); // Set as AI player
+            addCar(std::move(aiCarPtr));
+            
+            if (pvpMechanics) {
+                pvpMechanics->addPlayer(aiCar);
+            }
+        }
     }
 }
 
@@ -604,4 +688,49 @@ void Game::updateParticles(float dt) {
 
 void Game::updateTrails(float dt) {
     // Trail update
+}
+
+void Game::renderPvPEffects() {
+    if (!pvpMechanics) return;
+    
+    pvpMechanics->render();
+}
+
+void Game::renderPlayerStats() {
+    if (!playerCar || !renderer) return;
+    
+    const auto& stats = playerCar->getPlayerStats();
+    
+    // Render health bar
+    float healthPercent = stats.getHealthPercentage();
+    Vector3 healthBarPos(10.0f, 10.0f, 0.0f);
+    Vector3 healthBarSize(200.0f * healthPercent, 20.0f, 0.0f);
+    Vector3 healthBarColor(1.0f - healthPercent, healthPercent, 0.0f);
+    // renderer->renderUIElement(healthBarPos, healthBarSize, healthBarColor);
+    
+    // Render stamina bar
+    float staminaPercent = stats.getStaminaPercentage();
+    Vector3 staminaBarPos(10.0f, 40.0f, 0.0f);
+    Vector3 staminaBarSize(200.0f * staminaPercent, 15.0f, 0.0f);
+    Vector3 staminaBarColor(0.0f, staminaPercent, 1.0f);
+    // renderer->renderUIElement(staminaBarPos, staminaBarSize, staminaBarColor);
+    
+    // Render shield indicator
+    if (stats.isShieldActive()) {
+        Vector3 shieldPos(10.0f, 70.0f, 0.0f);
+        Vector3 shieldSize(50.0f, 15.0f, 0.0f);
+        Vector3 shieldColor(0.0f, 1.0f, 1.0f);
+        // renderer->renderUIElement(shieldPos, shieldSize, shieldColor);
+    }
+}
+
+void Game::setPvPEnabled(bool enabled) {
+    pvpEnabled = enabled;
+    if (pvpMechanics) {
+        pvpMechanics->enableCombat(enabled);
+    }
+}
+
+void Game::setCombatMode(bool enabled) {
+    combatMode = enabled;
 }
