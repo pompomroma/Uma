@@ -1,6 +1,9 @@
 #pragma once
 #include "Vector3.h"
 
+// Forward declaration to avoid circular includes
+class Matrix4;
+
 class Quaternion {
 public:
     float x, y, z, w;
@@ -15,6 +18,7 @@ public:
     Quaternion operator*(const Quaternion& other) const;
     Quaternion operator*(float scalar) const;
     Quaternion& operator*=(const Quaternion& other);
+    Vector3 operator*(const Vector3& v) const;
 
     // Utility functions
     float length() const;

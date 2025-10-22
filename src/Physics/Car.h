@@ -115,6 +115,7 @@ public:
     void setBrake(float brake);
     void setSteer(float steer);
     void setBoost(bool boost);
+    void setHandbrake(bool engaged) { /* reserved for future use */ (void)engaged; }
     
     // Physics update
     void update(float deltaTime);

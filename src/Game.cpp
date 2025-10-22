@@ -1,6 +1,7 @@
 #include "Game.h"
 #include <iostream>
 #include <chrono>
+#include <algorithm>
 #include <GLFW/glfw3.h>
 
 Game::Game() 
@@ -53,7 +54,7 @@ bool Game::initialize(int width, int height, const std::string& title) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, 0);
     
     // Create window
     GLFWwindow* window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
@@ -554,8 +555,9 @@ void Game::updateUI(float dt) {
 void Game::renderCars() {
     if (!renderer) return;
     
-    for (const auto& car : cars) {
-        if (car) {
+    for (const auto& carPtr : cars) {
+        if (carPtr) {
+            Car* car = carPtr.get();
             Matrix4 transform = car->getTransformMatrix();
             Vector3 color = (car == playerCar) ? Vector3(1.0f, 0.0f, 0.0f) : Vector3(0.0f, 0.0f, 1.0f);
             renderer->renderCar(transform, color);
