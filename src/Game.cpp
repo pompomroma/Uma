@@ -1,4 +1,5 @@
 #include "Game.h"
+#include <algorithm>
 #include <iostream>
 #include <chrono>
 #include <GLFW/glfw3.h>
@@ -557,7 +558,7 @@ void Game::renderCars() {
     for (const auto& car : cars) {
         if (car) {
             Matrix4 transform = car->getTransformMatrix();
-            Vector3 color = (car == playerCar) ? Vector3(1.0f, 0.0f, 0.0f) : Vector3(0.0f, 0.0f, 1.0f);
+            Vector3 color = (car.get() == playerCar) ? Vector3(1.0f, 0.0f, 0.0f) : Vector3(0.0f, 0.0f, 1.0f);
             renderer->renderCar(transform, color);
         }
     }

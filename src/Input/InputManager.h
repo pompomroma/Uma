@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include "../Math/Vector2.h"
 #include <unordered_map>
 #include <functional>
 #include <vector>
