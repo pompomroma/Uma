@@ -1,8 +1,13 @@
 #include "Renderer.h"
-#include <glad/glad.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 Renderer::Renderer() 
     : screenWidth(1920)
@@ -35,9 +40,9 @@ bool Renderer::initialize(int width, int height) {
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
     
-    // Initialize OpenGL
-    if (!gladLoadGL()) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
+    // Initialize GLEW
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW" << std::endl;
         return false;
     }
     
@@ -186,15 +191,74 @@ void Renderer::renderPlane(const Vector3& position, const Vector3& normal, float
 }
 
 void Renderer::renderLine(const Vector3& start, const Vector3& end, const Vector3& color) {
-    // Line rendering implementation
+    if (!basicShader) return;
+    
+    // Create line mesh
+    Mesh lineMesh;
+    lineMesh.vertices = {
+        {{start.x, start.y, start.z}, {0, 1, 0}, {color.x, color.y, color.z}, {0, 0}},
+        {{end.x, end.y, end.z}, {0, 1, 0}, {color.x, color.y, color.z}, {1, 0}}
+    };
+    lineMesh.indices = {0, 1};
+    
+    setupMesh(lineMesh);
+    
+    basicShader->use();
+    setupMatrices(basicShader.get(), Matrix4::identity());
+    basicShader->setVec3("color", color.x, color.y, color.z);
+    
     glLineWidth(renderState.lineWidth);
-    // ... line rendering code
+    glBindVertexArray(lineMesh.VAO);
+    glDrawElements(GL_LINES, lineMesh.indices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    
+    cleanupMesh(lineMesh);
+    drawCalls++;
 }
 
 void Renderer::renderGrid(int size, float spacing, const Vector3& color) {
-    // Grid rendering implementation
+    if (!basicShader) return;
+    
+    Mesh gridMesh;
+    
+    // Generate grid lines
+    float halfSize = size * spacing * 0.5f;
+    
+    // Horizontal lines
+    for (int i = 0; i <= size; i++) {
+        float z = -halfSize + i * spacing;
+        gridMesh.vertices.push_back({{-halfSize, 0, z}, {0, 1, 0}, {color.x, color.y, color.z}, {0, 0}});
+        gridMesh.vertices.push_back({{halfSize, 0, z}, {0, 1, 0}, {color.x, color.y, color.z}, {1, 0}});
+        
+        int baseIndex = gridMesh.vertices.size() - 2;
+        gridMesh.indices.push_back(baseIndex);
+        gridMesh.indices.push_back(baseIndex + 1);
+    }
+    
+    // Vertical lines
+    for (int i = 0; i <= size; i++) {
+        float x = -halfSize + i * spacing;
+        gridMesh.vertices.push_back({{x, 0, -halfSize}, {0, 1, 0}, {color.x, color.y, color.z}, {0, 0}});
+        gridMesh.vertices.push_back({{x, 0, halfSize}, {0, 1, 0}, {color.x, color.y, color.z}, {1, 0}});
+        
+        int baseIndex = gridMesh.vertices.size() - 2;
+        gridMesh.indices.push_back(baseIndex);
+        gridMesh.indices.push_back(baseIndex + 1);
+    }
+    
+    setupMesh(gridMesh);
+    
+    basicShader->use();
+    setupMatrices(basicShader.get(), Matrix4::identity());
+    basicShader->setVec3("color", color.x, color.y, color.z);
+    
     glLineWidth(renderState.lineWidth);
-    // ... grid rendering code
+    glBindVertexArray(gridMesh.VAO);
+    glDrawElements(GL_LINES, gridMesh.indices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    
+    cleanupMesh(gridMesh);
+    drawCalls++;
 }
 
 void Renderer::addLight(const Light& light) {
@@ -278,7 +342,7 @@ Renderer::Mesh Renderer::createCubeMesh(float size) {
     float halfSize = size * 0.5f;
     
     // Define cube vertices
-    std::vector<Vertex> vertices = {
+    mesh.vertices = {
         // Front face
         {{-halfSize, -halfSize,  halfSize}, {0, 0, 1}, {1, 0, 0}, {0, 0}},
         {{ halfSize, -halfSize,  halfSize}, {0, 0, 1}, {0, 1, 0}, {1, 0}},
@@ -293,7 +357,7 @@ Renderer::Mesh Renderer::createCubeMesh(float size) {
     };
     
     // Define cube indices
-    std::vector<unsigned int> indices = {
+    mesh.indices = {
         0, 1, 2, 2, 3, 0, // Front
         4, 5, 6, 6, 7, 4, // Back
         0, 1, 5, 5, 4, 0, // Bottom
@@ -301,9 +365,6 @@ Renderer::Mesh Renderer::createCubeMesh(float size) {
         0, 3, 7, 7, 4, 0, // Left
         1, 2, 6, 6, 5, 1  // Right
     };
-    
-    mesh.vertices = vertices;
-    mesh.indices = indices;
     setupMesh(mesh);
     
     return mesh;
@@ -326,7 +387,7 @@ Renderer::Mesh Renderer::createSphereMesh(float radius, int segments) {
             );
             vertex.normal = vertex.position.normalized();
             vertex.color = Vector3(1.0f, 1.0f, 1.0f);
-            vertex.texCoord = Vector3((float)j / segments, (float)i / segments, 0.0f);
+            vertex.texCoord = Vector2((float)j / segments, (float)i / segments);
             
             mesh.vertices.push_back(vertex);
         }
@@ -358,19 +419,16 @@ Renderer::Mesh Renderer::createPlaneMesh(float width, float height) {
     float halfWidth = width * 0.5f;
     float halfHeight = height * 0.5f;
     
-    std::vector<Vertex> vertices = {
+    mesh.vertices = {
         {{-halfWidth, 0, -halfHeight}, {0, 1, 0}, {1, 1, 1}, {0, 0}},
         {{ halfWidth, 0, -halfHeight}, {0, 1, 0}, {1, 1, 1}, {1, 0}},
         {{ halfWidth, 0,  halfHeight}, {0, 1, 0}, {1, 1, 1}, {1, 1}},
         {{-halfWidth, 0,  halfHeight}, {0, 1, 0}, {1, 1, 1}, {0, 1}}
     };
     
-    std::vector<unsigned int> indices = {
+    mesh.indices = {
         0, 1, 2, 2, 3, 0
     };
-    
-    mesh.vertices = vertices;
-    mesh.indices = indices;
     setupMesh(mesh);
     
     return mesh;
@@ -390,7 +448,7 @@ Renderer::Mesh Renderer::createCylinderMesh(float radius, float height, int segm
         topVertex.position = Vector3(x, height * 0.5f, z);
         topVertex.normal = Vector3(0, 1, 0);
         topVertex.color = Vector3(1, 1, 1);
-        topVertex.texCoord = Vector3((float)i / segments, 1, 0);
+        topVertex.texCoord = Vector2((float)i / segments, 1);
         mesh.vertices.push_back(topVertex);
         
         // Bottom circle
@@ -398,7 +456,7 @@ Renderer::Mesh Renderer::createCylinderMesh(float radius, float height, int segm
         bottomVertex.position = Vector3(x, -height * 0.5f, z);
         bottomVertex.normal = Vector3(0, -1, 0);
         bottomVertex.color = Vector3(1, 1, 1);
-        bottomVertex.texCoord = Vector3((float)i / segments, 0, 0);
+        bottomVertex.texCoord = Vector2((float)i / segments, 0);
         mesh.vertices.push_back(bottomVertex);
     }
     
@@ -447,7 +505,7 @@ Renderer::Mesh Renderer::createTrackMesh(const std::vector<Vector3>& vertices, c
         vertex.position = pos;
         vertex.normal = Vector3(0, 1, 0);
         vertex.color = Vector3(0.3f, 0.3f, 0.3f);
-        vertex.texCoord = Vector3(0, 0, 0);
+        vertex.texCoord = Vector2(0, 0);
         mesh.vertices.push_back(vertex);
     }
     
@@ -458,11 +516,48 @@ Renderer::Mesh Renderer::createTrackMesh(const std::vector<Vector3>& vertices, c
 }
 
 void Renderer::renderDebugInfo() {
-    // Debug info rendering
+    // Render performance stats as text overlay
+    // For now, we'll render simple debug geometry
+    
+    // Render coordinate axes at origin
+    renderLine(Vector3::zero(), Vector3(5.0f, 0.0f, 0.0f), Vector3(1.0f, 0.0f, 0.0f)); // X-axis (red)
+    renderLine(Vector3::zero(), Vector3(0.0f, 5.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f)); // Y-axis (green)
+    renderLine(Vector3::zero(), Vector3(0.0f, 0.0f, 5.0f), Vector3(0.0f, 0.0f, 1.0f)); // Z-axis (blue)
+    
+    // Render a grid on the ground
+    renderGrid(20, 5.0f, Vector3(0.3f, 0.3f, 0.3f));
 }
 
 void Renderer::renderBoundingBox(const Vector3& min, const Vector3& max, const Vector3& color) {
-    // Bounding box rendering
+    // Render wireframe bounding box
+    Vector3 vertices[8] = {
+        Vector3(min.x, min.y, min.z), // 0
+        Vector3(max.x, min.y, min.z), // 1
+        Vector3(max.x, max.y, min.z), // 2
+        Vector3(min.x, max.y, min.z), // 3
+        Vector3(min.x, min.y, max.z), // 4
+        Vector3(max.x, min.y, max.z), // 5
+        Vector3(max.x, max.y, max.z), // 6
+        Vector3(min.x, max.y, max.z)  // 7
+    };
+    
+    // Bottom face
+    renderLine(vertices[0], vertices[1], color);
+    renderLine(vertices[1], vertices[2], color);
+    renderLine(vertices[2], vertices[3], color);
+    renderLine(vertices[3], vertices[0], color);
+    
+    // Top face
+    renderLine(vertices[4], vertices[5], color);
+    renderLine(vertices[5], vertices[6], color);
+    renderLine(vertices[6], vertices[7], color);
+    renderLine(vertices[7], vertices[4], color);
+    
+    // Vertical edges
+    renderLine(vertices[0], vertices[4], color);
+    renderLine(vertices[1], vertices[5], color);
+    renderLine(vertices[2], vertices[6], color);
+    renderLine(vertices[3], vertices[7], color);
 }
 
 void Renderer::setupMesh(Mesh& mesh) {
@@ -491,7 +586,7 @@ void Renderer::setupMesh(Mesh& mesh) {
     glEnableVertexAttribArray(2);
     
     // Texture coordinate attribute
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(3);
     
     glBindVertexArray(0);

@@ -24,6 +24,17 @@ Quaternion Quaternion::operator*(float scalar) const {
     return Quaternion(x * scalar, y * scalar, z * scalar, w * scalar);
 }
 
+Vector3 Quaternion::operator*(const Vector3& v) const {
+    // Rotate vector by quaternion using the formula: v' = q * v * q^-1
+    // Optimized version for unit quaternions
+    Vector3 u(x, y, z);
+    float s = w;
+    
+    return u * (2.0f * u.dot(v))
+         + v * (s * s - u.dot(u))
+         + u.cross(v) * (2.0f * s);
+}
+
 Quaternion& Quaternion::operator*=(const Quaternion& other) {
     *this = *this * other;
     return *this;

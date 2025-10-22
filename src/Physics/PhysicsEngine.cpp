@@ -1,4 +1,6 @@
 #include "PhysicsEngine.h"
+#include <iostream>
+#include <algorithm>
 
 PhysicsEngine::PhysicsEngine() 
     : gravity(0.0f, -9.81f, 0.0f)
@@ -150,6 +152,29 @@ void PhysicsEngine::updateGroundCollision(Car* car) {
 }
 
 void PhysicsEngine::debugDraw() const {
-    // This would be implemented with a debug rendering system
-    // For now, it's a placeholder
+    // Debug visualization would be implemented here
+    // This would typically render:
+    // - Collision shapes
+    // - Velocity vectors
+    // - Force vectors
+    // - Contact points
+    // - Physics constraints
+    
+    // For now, we'll just print debug info to console in debug builds
+    #ifdef DEBUG_BUILD
+    std::cout << "Physics Debug Info:" << std::endl;
+    std::cout << "  Cars: " << cars.size() << std::endl;
+    std::cout << "  Gravity: " << gravity.x << ", " << gravity.y << ", " << gravity.z << std::endl;
+    std::cout << "  Ground Height: " << groundHeight << std::endl;
+    std::cout << "  Ground Friction: " << groundFriction << std::endl;
+    
+    for (size_t i = 0; i < cars.size(); i++) {
+        if (cars[i] != nullptr) {
+            Vector3 pos = cars[i]->getPosition();
+            Vector3 vel = cars[i]->getVelocity();
+            std::cout << "  Car " << i << " - Pos: (" << pos.x << ", " << pos.y << ", " << pos.z 
+                      << ") Vel: (" << vel.x << ", " << vel.y << ", " << vel.z << ")" << std::endl;
+        }
+    }
+    #endif
 }
