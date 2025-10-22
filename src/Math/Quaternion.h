@@ -1,6 +1,9 @@
 #pragma once
 #include "Vector3.h"
 
+// Forward declaration
+class Matrix4;
+
 class Quaternion {
 public:
     float x, y, z, w;
@@ -14,6 +17,7 @@ public:
     Quaternion operator-(const Quaternion& other) const;
     Quaternion operator*(const Quaternion& other) const;
     Quaternion operator*(float scalar) const;
+    Vector3 operator*(const Vector3& v) const;  // Rotate a vector by this quaternion
     Quaternion& operator*=(const Quaternion& other);
 
     // Utility functions
@@ -25,7 +29,7 @@ public:
     Quaternion inverse() const;
 
     // Conversion functions
-    Matrix4 toMatrix() const;
+    Matrix4 toMatrix4() const;
     Vector3 toEulerAngles() const;
     static Quaternion fromEulerAngles(const Vector3& euler);
     static Quaternion fromAxisAngle(const Vector3& axis, float angle);

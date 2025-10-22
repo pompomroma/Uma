@@ -31,4 +31,5 @@ public:
     Matrix4 inverse() const;
     Vector3 getTranslation() const;
     Vector3 getScale() const;
+    const float* data() const { return &m[0]; }  // Get raw data pointer
 };

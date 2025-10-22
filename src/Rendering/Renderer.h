@@ -12,6 +12,10 @@ public:
         Vector3 normal;
         Vector3 color;
         Vector3 texCoord;
+        
+        Vertex() {}
+        Vertex(const Vector3& pos, const Vector3& norm, const Vector3& col, const Vector3& tex)
+            : position(pos), normal(norm), color(col), texCoord(tex) {}
     };
 
     struct Mesh {
@@ -135,6 +139,14 @@ public:
     // Debug
     void renderDebugInfo();
     void renderBoundingBox(const Vector3& min, const Vector3& max, const Vector3& color);
+    
+    // Combat/PvP rendering
+    void renderSphere(const Vector3& position, float radius, const Vector3& color, float opacity = 1.0f);
+    void renderHealthBar(const Vector3& position, float percentage, float width, float height);
+    void renderBar(float x, float y, float width, float height, float percentage, const Vector3& fillColor, const Vector3& bgColor);
+    void renderQuad(const Vector3& position, float width, float height, const Vector3& color, float opacity = 1.0f);
+    void renderText(const std::string& text, float x, float y, float scale, const Vector3& color);
+    void renderAbilityIcon(float x, float y, float width, float height, const std::string& key, bool isReady);
     
 private:
     void setupMesh(Mesh& mesh);

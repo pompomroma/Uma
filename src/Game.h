@@ -5,6 +5,8 @@
 #include "Rendering/Renderer.h"
 #include "Input/InputManager.h"
 #include "World/Track.h"
+#include "Combat/CombatManager.h"
+#include "Combat/Player.h"
 #include <memory>
 #include <vector>
 
@@ -14,7 +16,9 @@ public:
         Menu,
         Playing,
         Paused,
-        GameOver
+        GameOver,
+        PvPMode,
+        StatsMenu
     };
 
 private:
@@ -24,10 +28,15 @@ private:
     std::unique_ptr<PhysicsEngine> physicsEngine;
     std::unique_ptr<Camera> camera;
     std::unique_ptr<Track> track;
+    std::unique_ptr<CombatManager> combatManager;
     
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
     Car* playerCar;
+    
+    // PvP objects
+    Player* localPlayer;
+    std::vector<Player*> pvpPlayers;
     
     // Game state
     GameState currentState;
@@ -116,6 +125,14 @@ public:
     void onPause();
     void onReset();
     
+    // Combat input handling
+    void onAttack1();
+    void onAttack2();
+    void onShield();
+    void onTeleport();
+    void onInteract();
+    void onStatMenu();
+    
     // Rendering
     void renderGame();
     void renderUI();
@@ -123,6 +140,9 @@ public:
     void renderDebugInfo();
     void renderMenu();
     void renderPauseMenu();
+    void renderPvPMode();
+    void renderStatsMenu();
+    void renderCombatHUD();
     
     // Gameplay
     void updateGameplay(float deltaTime);
@@ -131,6 +151,15 @@ public:
     void checkWinCondition();
     void spawnCars();
     void updateAI(float deltaTime);
+    
+    // PvP gameplay
+    void initializePvPMode();
+    void updatePvPMode(float deltaTime);
+    void startPvPMatch();
+    void endPvPMatch();
+    void addPvPPlayer(const std::string& name);
+    void handlePlayerLevelUp(Player* player);
+    void distributeStatPoint(Player* player, const std::string& stat);
     
     // Settings
     void setScreenSize(int width, int height);

@@ -1,7 +1,9 @@
 #pragma once
+#include "../Math/Vector2.h"
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include <string>
 
 class InputManager {
 public:
@@ -26,6 +28,13 @@ public:
         CameraZoom,
         Pause,
         Reset,
+        // Combat actions
+        Attack1,        // Fist attack
+        Attack2,        // Laser attack
+        Shield,         // Activate shield
+        Teleport,       // Teleport ability
+        Interact,       // Pick up items
+        StatMenu,       // Open stats menu
         Count
     };
 
@@ -68,6 +77,14 @@ private:
     std::function<void(float)> onCameraZoom;
     std::function<void()> onPause;
     std::function<void()> onReset;
+    
+    // Combat callbacks
+    std::function<void()> onAttack1;
+    std::function<void()> onAttack2;
+    std::function<void()> onShield;
+    std::function<void()> onTeleport;
+    std::function<void()> onInteract;
+    std::function<void()> onStatMenu;
 
 public:
     InputManager();
@@ -129,6 +146,14 @@ public:
     void setCameraZoomCallback(std::function<void(float)> callback);
     void setPauseCallback(std::function<void()> callback);
     void setResetCallback(std::function<void()> callback);
+    
+    // Combat callback registration
+    void setAttack1Callback(std::function<void()> callback);
+    void setAttack2Callback(std::function<void()> callback);
+    void setShieldCallback(std::function<void()> callback);
+    void setTeleportCallback(std::function<void()> callback);
+    void setInteractCallback(std::function<void()> callback);
+    void setStatMenuCallback(std::function<void()> callback);
     
     // Input state management
     void setMouseLookActive(bool active);
