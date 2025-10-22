@@ -100,6 +100,9 @@ void Game::shutdown() {
     }
     
     physicsEngine.reset();
+    combat.reset();
+    playerOne.reset();
+    playerTwo.reset();
     camera.reset();
     track.reset();
     cars.clear();
@@ -191,7 +194,10 @@ void Game::handleInput() {
         playerCar->setBrake(inputManager->getBrakeInput());
         playerCar->setSteer(inputManager->getSteerInput());
         playerCar->setBoost(inputManager->getBoostInput());
-        playerCar->setHandbrake(inputManager->getHandbrakeInput());
+        // No explicit handbrake method; simulate via strong brake when engaged
+        if (inputManager->getHandbrakeInput()) {
+            playerCar->setBrake(1.0f);
+        }
     }
     
     // Handle camera input
@@ -291,6 +297,11 @@ void Game::setupInputCallbacks() {
     inputManager->setCameraZoomCallback([this](float delta) { onCameraZoom(delta); });
     inputManager->setPauseCallback([this]() { onPause(); });
     inputManager->setResetCallback([this]() { onReset(); });
+    // PvP actions
+    inputManager->setLaserCallback([this]() { onLaser(); });
+    inputManager->setMeleeCallback([this]() { onMelee(); });
+    inputManager->setShieldCallback([this](bool active) { onShield(active); });
+    inputManager->setTeleportCallback([this]() { onTeleport(); });
 }
 
 void Game::onAccelerate(float input) {
@@ -353,6 +364,10 @@ void Game::renderGame() {
     // Render particles and effects
     renderParticles();
     renderTrails();
+
+    // PvP players and effects
+    renderPlayers();
+    renderCombatEffects();
 }
 
 void Game::renderUI() {
@@ -383,6 +398,7 @@ void Game::updateGameplay(float dt) {
     updateTiming();
     checkWinCondition();
     updateAI(dt);
+    updatePvP(dt);
 }
 
 void Game::updateLapProgress() {
@@ -433,15 +449,15 @@ void Game::setVSync(bool vsync) {
 }
 
 void Game::setMasterVolume(float volume) {
-    masterVolume = std::clamp(volume, 0.0f, 1.0f);
+    masterVolume = std::max(0.0f, std::min(1.0f, volume));
 }
 
 void Game::setSFXVolume(float volume) {
-    sfxVolume = std::clamp(volume, 0.0f, 1.0f);
+    sfxVolume = std::max(0.0f, std::min(1.0f, volume));
 }
 
 void Game::setMusicVolume(float volume) {
-    musicVolume = std::clamp(volume, 0.0f, 1.0f);
+    musicVolume = std::max(0.0f, std::min(1.0f, volume));
 }
 
 void Game::setCameraSensitivity(float sensitivity) {
@@ -456,7 +472,7 @@ void Game::setCameraInverted(bool inverted) {
 }
 
 void Game::setDifficulty(float difficulty) {
-    this->difficulty = std::clamp(difficulty, 0.1f, 2.0f);
+    this->difficulty = std::max(0.1f, std::min(2.0f, difficulty));
 }
 
 void Game::setAutoBrake(bool enabled) {
@@ -506,6 +522,12 @@ void Game::initializeGame() {
     initializeTrack();
     initializeCamera();
     initializeInput();
+    // Initialize PvP system
+    combat = std::make_unique<CombatSystem>();
+    playerOne = std::make_unique<Player>();
+    playerTwo = std::make_unique<Player>();
+    playerOne->position = Vector3(0.0f, 0.0f, -5.0f);
+    playerTwo->position = Vector3(0.0f, 0.0f, 5.0f);
 }
 
 void Game::initializeCars() {
@@ -551,13 +573,69 @@ void Game::updateUI(float dt) {
     // UI update
 }
 
+// PvP rendering and logic
+void Game::renderPlayers() {
+    if (!renderer) return;
+    if (playerOne) {
+        renderer->renderSphere(playerOne->position, 0.6f, Vector3(0.9f, 0.2f, 0.2f));
+        if (playerOne->shieldActive) {
+            renderer->renderShield(playerOne->position, 1.0f, Vector3(0.2f, 0.6f, 1.0f));
+        }
+    }
+    if (playerTwo) {
+        renderer->renderSphere(playerTwo->position, 0.6f, Vector3(0.2f, 0.2f, 0.9f));
+        if (playerTwo->shieldActive) {
+            renderer->renderShield(playerTwo->position, 1.0f, Vector3(0.2f, 0.6f, 1.0f));
+        }
+    }
+}
+
+void Game::renderCombatEffects() {
+    if (!renderer || !combat) return;
+    for (const auto& l : combat->getActiveLasers()) {
+        renderer->setLineWidth(3.0f);
+        renderer->renderLine(l.start, l.end, Vector3(1.0f, 0.2f, 0.2f));
+        renderer->setLineWidth(1.0f);
+    }
+}
+
+void Game::updatePvP(float dt) {
+    if (playerOne) playerOne->update(dt);
+    if (playerTwo) playerTwo->update(dt);
+    if (combat) combat->update(dt);
+}
+
+// PvP inputs
+void Game::onLaser() {
+    if (!combat || !playerOne || !playerTwo) return;
+    combat->fireLaser(*playerOne, *playerTwo);
+}
+
+void Game::onMelee() {
+    if (!combat || !playerOne || !playerTwo) return;
+    combat->meleePunch(*playerOne, *playerTwo);
+}
+
+void Game::onShield(bool active) {
+    if (!combat || !playerOne) return;
+    combat->setShield(*playerOne, active);
+}
+
+void Game::onTeleport() {
+    if (!combat || !playerOne) return;
+    // Teleport a short distance forward from current position
+    Vector3 forward = Vector3::forward();
+    Vector3 target = playerOne->position + forward * 5.0f;
+    combat->teleport(*playerOne, target);
+}
+
 void Game::renderCars() {
     if (!renderer) return;
     
     for (const auto& car : cars) {
         if (car) {
             Matrix4 transform = car->getTransformMatrix();
-            Vector3 color = (car == playerCar) ? Vector3(1.0f, 0.0f, 0.0f) : Vector3(0.0f, 0.0f, 1.0f);
+            Vector3 color = (car.get() == playerCar) ? Vector3(1.0f, 0.0f, 0.0f) : Vector3(0.0f, 0.0f, 1.0f);
             renderer->renderCar(transform, color);
         }
     }

@@ -1,4 +1,5 @@
 #include "PhysicsEngine.h"
+#include <algorithm>
 
 PhysicsEngine::PhysicsEngine() 
     : gravity(0.0f, -9.81f, 0.0f)
@@ -40,7 +41,7 @@ void PhysicsEngine::setAirDensity(float density) {
 }
 
 void PhysicsEngine::setGroundFriction(float friction) {
-    groundFriction = std::clamp(friction, 0.0f, 1.0f);
+    groundFriction = std::max(0.0f, std::min(1.0f, friction));
 }
 
 void PhysicsEngine::setGroundHeight(float height) {

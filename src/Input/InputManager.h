@@ -2,6 +2,8 @@
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include <string>
+#include "../Math/Vector2.h"
 
 class InputManager {
 public:
@@ -26,6 +28,11 @@ public:
         CameraZoom,
         Pause,
         Reset,
+        // PvP actions
+        Laser,
+        Melee,
+        Shield,
+        Teleport,
         Count
     };
 
@@ -68,6 +75,11 @@ private:
     std::function<void(float)> onCameraZoom;
     std::function<void()> onPause;
     std::function<void()> onReset;
+    // PvP callbacks
+    std::function<void()> onLaser;
+    std::function<void()> onMelee;
+    std::function<void(bool)> onShield; // true=activate, false=deactivate
+    std::function<void()> onTeleport;
 
 public:
     InputManager();
@@ -129,6 +141,10 @@ public:
     void setCameraZoomCallback(std::function<void(float)> callback);
     void setPauseCallback(std::function<void()> callback);
     void setResetCallback(std::function<void()> callback);
+    void setLaserCallback(std::function<void()> callback);
+    void setMeleeCallback(std::function<void()> callback);
+    void setShieldCallback(std::function<void(bool)> callback);
+    void setTeleportCallback(std::function<void()> callback);
     
     // Input state management
     void setMouseLookActive(bool active);
@@ -144,6 +160,11 @@ public:
     bool getHandbrakeInput() const;
     Vector2 getCameraLookInput() const;
     float getCameraZoomInput() const;
+    // PvP inputs
+    bool getLaserInputPressed() const;
+    bool getMeleeInputPressed() const;
+    bool getShieldInput() const;
+    bool getTeleportInputPressed() const;
     
     // Utility functions
     void clearInputState();

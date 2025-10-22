@@ -1,5 +1,6 @@
 #pragma once
 #include "Vector3.h"
+#include "Matrix4.h"
 
 class Quaternion {
 public:
@@ -35,3 +36,6 @@ public:
     static Quaternion identity();
     static Quaternion slerp(const Quaternion& a, const Quaternion& b, float t);
 };
+
+// Rotate a vector by a quaternion
+Vector3 operator*(const Quaternion& q, const Vector3& v);

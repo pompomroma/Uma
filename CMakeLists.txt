@@ -18,8 +18,15 @@ set(SOURCES
     src/main.cpp
     src/Game.cpp
     src/Game.h
+    src/Gameplay/Stats.cpp
+    src/Gameplay/Stats.h
+    src/Gameplay/Player.cpp
+    src/Gameplay/Player.h
+    src/Gameplay/CombatSystem.cpp
+    src/Gameplay/CombatSystem.h
     src/Math/Vector3.cpp
     src/Math/Vector3.h
+    src/Math/Vector2.h
     src/Math/Matrix4.cpp
     src/Math/Matrix4.h
     src/Math/Quaternion.cpp

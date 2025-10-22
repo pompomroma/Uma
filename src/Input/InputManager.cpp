@@ -217,6 +217,11 @@ void InputManager::setDefaultBindings() {
     bindKeyToAction(Key::MouseLeft, Action::CameraLook);
     bindKeyToAction(Key::Escape, Action::Pause);
     bindKeyToAction(Key::F1, Action::Reset);
+    // PvP defaults
+    bindKeyToAction(Key::MouseLeft, Action::Laser);   // Left click shoot
+    bindKeyToAction(Key::MouseRight, Action::Shield); // Hold for shield
+    bindKeyToAction(Key::Ctrl, Action::Melee);        // Ctrl melee
+    bindKeyToAction(Key::F2, Action::Teleport);       // F2 teleport
 }
 
 void InputManager::setAccelerateCallback(std::function<void(float)> callback) {
@@ -253,6 +258,22 @@ void InputManager::setPauseCallback(std::function<void()> callback) {
 
 void InputManager::setResetCallback(std::function<void()> callback) {
     onReset = callback;
+}
+
+void InputManager::setLaserCallback(std::function<void()> callback) {
+    onLaser = callback;
+}
+
+void InputManager::setMeleeCallback(std::function<void()> callback) {
+    onMelee = callback;
+}
+
+void InputManager::setShieldCallback(std::function<void(bool)> callback) {
+    onShield = callback;
+}
+
+void InputManager::setTeleportCallback(std::function<void()> callback) {
+    onTeleport = callback;
 }
 
 void InputManager::setMouseLookActive(bool active) {
@@ -344,6 +365,22 @@ float InputManager::getCameraZoomInput() const {
     return getMouseScrollDelta();
 }
 
+bool InputManager::getLaserInputPressed() const {
+    return isActionJustPressed(Action::Laser);
+}
+
+bool InputManager::getMeleeInputPressed() const {
+    return isActionJustPressed(Action::Melee);
+}
+
+bool InputManager::getShieldInput() const {
+    return isActionPressed(Action::Shield);
+}
+
+bool InputManager::getTeleportInputPressed() const {
+    return isActionJustPressed(Action::Teleport);
+}
+
 void InputManager::clearInputState() {
     for (auto& pair : keyStates) {
         pair.second = false;
@@ -421,6 +458,11 @@ void InputManager::processActionCallbacks() {
     if (onReset && isActionJustPressed(Action::Reset)) {
         onReset();
     }
+    // PvP callbacks
+    if (onLaser && getLaserInputPressed()) { onLaser(); }
+    if (onMelee && getMeleeInputPressed()) { onMelee(); }
+    if (onShield) { onShield(getShieldInput()); }
+    if (onTeleport && getTeleportInputPressed()) { onTeleport(); }
 }
 
 InputManager::Key InputManager::getKeyFromString(const std::string& keyName) const {
