@@ -19,6 +19,7 @@ int main() {
         std::cout << "  Mouse - Camera look" << std::endl;
         std::cout << "  Space - Boost" << std::endl;
         std::cout << "  Shift - Handbrake" << std::endl;
+        std::cout << "  L-Click - Laser, R-Click hold - Shield, Ctrl - Melee, F2 - Teleport" << std::endl;
         std::cout << "  ESC - Pause" << std::endl;
         std::cout << "  F1 - Reset" << std::endl;
         

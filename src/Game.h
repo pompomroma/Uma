@@ -4,6 +4,8 @@
 #include "Physics/PhysicsEngine.h"
 #include "Rendering/Renderer.h"
 #include "Input/InputManager.h"
+#include "Gameplay/Player.h"
+#include "Gameplay/CombatSystem.h"
 #include "World/Track.h"
 #include <memory>
 #include <vector>
@@ -28,6 +30,10 @@ private:
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
     Car* playerCar;
+    // PvP players
+    std::unique_ptr<Player> playerOne;
+    std::unique_ptr<Player> playerTwo;
+    std::unique_ptr<CombatSystem> combat;
     
     // Game state
     GameState currentState;
@@ -115,6 +121,11 @@ public:
     void onCameraZoom(float delta);
     void onPause();
     void onReset();
+    // PvP callbacks
+    void onLaser();
+    void onMelee();
+    void onShield(bool active);
+    void onTeleport();
     
     // Rendering
     void renderGame();
@@ -123,9 +134,13 @@ public:
     void renderDebugInfo();
     void renderMenu();
     void renderPauseMenu();
+    // PvP rendering
+    void renderPlayers();
+    void renderCombatEffects();
     
     // Gameplay
     void updateGameplay(float deltaTime);
+    void updatePvP(float deltaTime);
     void updateLapProgress();
     void updateTiming();
     void checkWinCondition();

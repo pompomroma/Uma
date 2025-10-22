@@ -95,6 +95,7 @@ public:
     void renderSphere(const Vector3& position, float radius, const Vector3& color);
     void renderPlane(const Vector3& position, const Vector3& normal, float size, const Vector3& color);
     void renderLine(const Vector3& start, const Vector3& end, const Vector3& color);
+    void renderShield(const Vector3& position, float radius, const Vector3& color);
     void renderGrid(int size, float spacing, const Vector3& color);
     
     // Lighting

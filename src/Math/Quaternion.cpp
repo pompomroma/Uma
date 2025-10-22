@@ -223,3 +223,9 @@ Quaternion Quaternion::slerp(const Quaternion& a, const Quaternion& b, float t) 
     
     return (a * s0 + b * s1).normalized();
 }
+
+Vector3 operator*(const Quaternion& q, const Vector3& v) {
+    // Convert quaternion to rotation matrix and apply to vector (simple and clear)
+    Matrix4 rot = q.toMatrix();
+    return rot * v;
+}
