@@ -5,6 +5,7 @@
 #include "Rendering/Renderer.h"
 #include "Input/InputManager.h"
 #include "World/Track.h"
+#include "Player/Player.h"
 #include <memory>
 #include <vector>
 
@@ -28,6 +29,10 @@ private:
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
     Car* playerCar;
+    
+    // PVP System
+    std::vector<std::unique_ptr<Player>> players;
+    Player* localPlayer;
     
     // Game state
     GameState currentState;
@@ -116,6 +121,13 @@ public:
     void onPause();
     void onReset();
     
+    // PVP Input handlers
+    void onLaserAttack();
+    void onFistAttack();
+    void onUltimateAttack();
+    void onShield(bool input);
+    void onTeleport();
+    
     // Rendering
     void renderGame();
     void renderUI();
@@ -124,6 +136,13 @@ public:
     void renderMenu();
     void renderPauseMenu();
     
+    // PVP Rendering
+    void renderPlayers();
+    void renderProjectiles();
+    void renderShields();
+    void renderPVPUI();
+    void renderPlayerStats();
+    
     // Gameplay
     void updateGameplay(float deltaTime);
     void updateLapProgress();
@@ -131,6 +150,14 @@ public:
     void checkWinCondition();
     void spawnCars();
     void updateAI(float deltaTime);
+    
+    // PVP Gameplay
+    void updatePlayers(float deltaTime);
+    void updatePVPCombat(float deltaTime);
+    void checkProjectileCollisions();
+    void addPlayer(std::unique_ptr<Player> player);
+    Player* getLocalPlayer() const { return localPlayer; }
+    void setLocalPlayer(Player* player) { localPlayer = player; }
     
     // Settings
     void setScreenSize(int width, int height);
@@ -169,6 +196,7 @@ private:
     void initializeTrack();
     void initializeCamera();
     void initializeInput();
+    void initializePlayers();
     void updatePhysics(float deltaTime);
     void updateAudio(float deltaTime);
     void updateUI(float deltaTime);

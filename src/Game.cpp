@@ -32,7 +32,8 @@ Game::Game()
     , autoSteer(false)
     , showHUD(true)
     , showDebugInfo(false)
-    , playerCar(nullptr) {
+    , playerCar(nullptr)
+    , localPlayer(nullptr) {
 }
 
 Game::~Game() {
@@ -104,6 +105,8 @@ void Game::shutdown() {
     track.reset();
     cars.clear();
     playerCar = nullptr;
+    players.clear();
+    localPlayer = nullptr;
     
     glfwTerminate();
 }
@@ -141,6 +144,8 @@ void Game::update(float dt) {
         handleInput();
         updatePhysics(dt);
         updateGameplay(dt);
+        updatePlayers(dt);
+        updatePVPCombat(dt);
         updateCamera(dt);
         updateParticles(dt);
         updateTrails(dt);
@@ -291,6 +296,13 @@ void Game::setupInputCallbacks() {
     inputManager->setCameraZoomCallback([this](float delta) { onCameraZoom(delta); });
     inputManager->setPauseCallback([this]() { onPause(); });
     inputManager->setResetCallback([this]() { onReset(); });
+    
+    // PVP input callbacks
+    inputManager->setLaserAttackCallback([this]() { onLaserAttack(); });
+    inputManager->setFistAttackCallback([this]() { onFistAttack(); });
+    inputManager->setUltimateAttackCallback([this]() { onUltimateAttack(); });
+    inputManager->setShieldCallback([this](bool input) { onShield(input); });
+    inputManager->setTeleportCallback([this]() { onTeleport(); });
 }
 
 void Game::onAccelerate(float input) {
@@ -333,6 +345,42 @@ void Game::onReset() {
     restart();
 }
 
+void Game::onLaserAttack() {
+    if (!localPlayer) return;
+    
+    // Get mouse position or camera forward direction for targeting
+    Vector3 targetPosition = localPlayer->getPosition() + localPlayer->getForward() * 50.0f;
+    localPlayer->performLaserAttack(targetPosition);
+}
+
+void Game::onFistAttack() {
+    if (!localPlayer) return;
+    localPlayer->performFistAttack();
+}
+
+void Game::onUltimateAttack() {
+    if (!localPlayer) return;
+    localPlayer->performUltimateAttack();
+}
+
+void Game::onShield(bool input) {
+    if (!localPlayer) return;
+    
+    if (input) {
+        localPlayer->activateShield();
+    } else {
+        localPlayer->deactivateShield();
+    }
+}
+
+void Game::onTeleport() {
+    if (!localPlayer) return;
+    
+    // Teleport forward in the direction the player is facing
+    Vector3 teleportDirection = localPlayer->getForward();
+    localPlayer->teleportInDirection(teleportDirection, 15.0f);
+}
+
 void Game::renderGame() {
     if (!renderer) return;
     
@@ -350,6 +398,11 @@ void Game::renderGame() {
     // Render environment
     renderEnvironment();
     
+    // Render PVP elements
+    renderPlayers();
+    renderProjectiles();
+    renderShields();
+    
     // Render particles and effects
     renderParticles();
     renderTrails();
@@ -361,6 +414,8 @@ void Game::renderUI() {
 
 void Game::renderHUD() {
     // HUD rendering
+    renderPVPUI();
+    renderPlayerStats();
 }
 
 void Game::renderDebugInfo() {
@@ -383,6 +438,54 @@ void Game::updateGameplay(float dt) {
     updateTiming();
     checkWinCondition();
     updateAI(dt);
+}
+
+void Game::updatePlayers(float dt) {
+    for (auto& player : players) {
+        if (player) {
+            player->update(dt);
+        }
+    }
+}
+
+void Game::updatePVPCombat(float dt) {
+    checkProjectileCollisions();
+}
+
+void Game::checkProjectileCollisions() {
+    // Check collisions between projectiles and players
+    for (auto& player : players) {
+        if (!player || player->isDead()) continue;
+        
+        for (auto& otherPlayer : players) {
+            if (!otherPlayer || otherPlayer == player) continue;
+            
+            // Check this player's projectiles against other players
+            const auto& projectiles = player->getProjectiles();
+            for (const auto& proj : projectiles) {
+                if (!proj || proj->isDead()) continue;
+                
+                // Simple sphere collision
+                Vector3 projPos = proj->getPosition();
+                Vector3 targetPos = otherPlayer->getPosition();
+                float distance = (projPos - targetPos).length();
+                float collisionRadius = proj->getRadius() + 1.0f; // Player collision radius
+                
+                if (distance < collisionRadius) {
+                    proj->onHit(otherPlayer.get());
+                }
+            }
+        }
+    }
+}
+
+void Game::addPlayer(std::unique_ptr<Player> player) {
+    if (player) {
+        players.push_back(std::move(player));
+        if (!localPlayer) {
+            localPlayer = players.back().get();
+        }
+    }
 }
 
 void Game::updateLapProgress() {
@@ -506,6 +609,7 @@ void Game::initializeGame() {
     initializeTrack();
     initializeCamera();
     initializeInput();
+    initializePlayers();
 }
 
 void Game::initializeCars() {
@@ -535,6 +639,16 @@ void Game::initializeCamera() {
 
 void Game::initializeInput() {
     setupInputCallbacks();
+}
+
+void Game::initializePlayers() {
+    // Create local player attached to the player car
+    if (playerCar) {
+        auto player = std::make_unique<Player>(playerCar);
+        player->initialize();
+        localPlayer = player.get();
+        addPlayer(std::move(player));
+    }
 }
 
 void Game::updatePhysics(float dt) {
@@ -604,4 +718,85 @@ void Game::updateParticles(float dt) {
 
 void Game::updateTrails(float dt) {
     // Trail update
+}
+
+void Game::renderPlayers() {
+    // Players are rendered as part of their cars
+    // Additional visual effects (shields, etc.) are rendered separately
+}
+
+void Game::renderProjectiles() {
+    if (!renderer) return;
+    
+    for (const auto& player : players) {
+        if (!player) continue;
+        
+        const auto& projectiles = player->getProjectiles();
+        for (const auto& proj : projectiles) {
+            if (!proj || proj->isDead()) continue;
+            
+            Vector3 pos = proj->getPosition();
+            Vector3 color = proj->getColor();
+            float radius = proj->getRadius();
+            
+            // Render projectile as a sphere
+            renderer->renderSphere(pos, radius, color);
+            
+            // Render trail if applicable
+            if (proj->shouldRenderTrail()) {
+                Vector3 trailStart = pos - proj->getDirection() * 2.0f;
+                renderer->renderLine(trailStart, pos, color, proj->getTrailIntensity());
+            }
+        }
+    }
+}
+
+void Game::renderShields() {
+    if (!renderer) return;
+    
+    for (const auto& player : players) {
+        if (!player || !player->isShieldActive()) continue;
+        
+        Vector3 pos = player->getPosition();
+        // Render shield as a semi-transparent sphere around the player
+        renderer->renderShieldEffect(pos, 2.5f, Vector3(0.0f, 0.5f, 1.0f), 0.3f);
+    }
+}
+
+void Game::renderPVPUI() {
+    // Render PVP-specific UI elements
+    // This would include ability cooldowns, etc.
+}
+
+void Game::renderPlayerStats() {
+    if (!renderer || !localPlayer) return;
+    
+    // Render player stats bars (health, stamina, mana)
+    const auto& stats = localPlayer->getStats();
+    
+    // Health bar
+    float healthPercent = localPlayer->getHealthPercentage();
+    renderer->renderBar(Vector3(50.0f, 50.0f, 0.0f), 200.0f, 20.0f, 
+                        healthPercent, Vector3(0.0f, 1.0f, 0.0f));
+    
+    // Stamina bar
+    float staminaPercent = localPlayer->getStaminaPercentage();
+    renderer->renderBar(Vector3(50.0f, 80.0f, 0.0f), 200.0f, 15.0f, 
+                        staminaPercent, Vector3(1.0f, 1.0f, 0.0f));
+    
+    // Mana bar
+    float manaPercent = localPlayer->getManaPercentage();
+    renderer->renderBar(Vector3(50.0f, 105.0f, 0.0f), 200.0f, 15.0f, 
+                        manaPercent, Vector3(0.0f, 0.5f, 1.0f));
+    
+    // Teleport charges indicator
+    int teleportCharges = localPlayer->getTeleportCharges();
+    renderer->renderText(Vector3(50.0f, 130.0f, 0.0f), 
+                         "Teleport: " + std::to_string(teleportCharges), 
+                         Vector3(1.0f, 1.0f, 1.0f));
+    
+    // Level and stats
+    renderer->renderText(Vector3(50.0f, 155.0f, 0.0f), 
+                         "Level: " + std::to_string(stats.level), 
+                         Vector3(1.0f, 1.0f, 1.0f));
 }

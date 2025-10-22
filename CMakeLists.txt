@@ -18,6 +18,8 @@ set(SOURCES
     src/main.cpp
     src/Game.cpp
     src/Game.h
+    src/Math/Vector2.cpp
+    src/Math/Vector2.h
     src/Math/Vector3.cpp
     src/Math/Vector3.h
     src/Math/Matrix4.cpp
@@ -38,6 +40,12 @@ set(SOURCES
     src/World/Track.h
     src/Utils/Shader.cpp
     src/Utils/Shader.h
+    src/Player/Player.cpp
+    src/Player/Player.h
+    src/Player/Projectile.cpp
+    src/Player/Projectile.h
+    src/Player/Shield.cpp
+    src/Player/Shield.h
 )
 
 # Create executable

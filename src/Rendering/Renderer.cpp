@@ -662,3 +662,48 @@ std::string Renderer::getSkyboxFragmentShaderSource() {
         }
     )";
 }
+
+// PVP rendering implementations
+void Renderer::renderShieldEffect(const Vector3& position, float radius, const Vector3& color, float opacity) {
+    // Render a semi-transparent sphere for shield effect
+    // For now, just render a sphere with reduced opacity
+    // TODO: Implement proper transparent rendering with blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    renderSphere(position, radius, color);
+    
+    glDisable(GL_BLEND);
+}
+
+void Renderer::renderBar(const Vector3& position, float width, float height, float fillPercentage, const Vector3& color) {
+    // Render a 2D bar for UI (health, stamina, mana bars)
+    // This is a simple placeholder implementation
+    // TODO: Implement proper 2D UI rendering with orthographic projection
+    
+    // Clamp fill percentage
+    fillPercentage = std::max(0.0f, std::min(1.0f, fillPercentage));
+    
+    // Background bar (dark)
+    Vector3 bgColor(0.2f, 0.2f, 0.2f);
+    // Fill bar (colored)
+    float fillWidth = width * fillPercentage;
+    
+    // In a real implementation, we would:
+    // 1. Switch to orthographic projection
+    // 2. Render a quad for background
+    // 3. Render a quad for fill
+    // 4. Switch back to perspective projection
+    
+    // Placeholder - just log the bar rendering
+    // std::cout << "Rendering bar at " << position.x << ", " << position.y << std::endl;
+}
+
+void Renderer::renderText(const Vector3& position, const std::string& text, const Vector3& color) {
+    // Render text for UI
+    // This is a placeholder - proper text rendering would require a font system
+    // TODO: Implement text rendering with FreeType or similar library
+    
+    // Placeholder - just log the text rendering
+    // std::cout << "Rendering text: " << text << " at " << position.x << ", " << position.y << std::endl;
+}
