@@ -217,6 +217,15 @@ void InputManager::setDefaultBindings() {
     bindKeyToAction(Key::MouseLeft, Action::CameraLook);
     bindKeyToAction(Key::Escape, Action::Pause);
     bindKeyToAction(Key::F1, Action::Reset);
+    
+    // PVP controls
+    bindKeyToAction(Key::MouseLeft, Action::LaserAttack);
+    bindKeyToAction(Key::Q, Action::LaserAttack);
+    bindKeyToAction(Key::E, Action::FistAttack);
+    bindKeyToAction(Key::R, Action::UltimateAttack);
+    bindKeyToAction(Key::MouseRight, Action::Shield);
+    bindKeyToAction(Key::Z, Action::Shield);
+    bindKeyToAction(Key::X, Action::Teleport);
 }
 
 void InputManager::setAccelerateCallback(std::function<void(float)> callback) {
@@ -253,6 +262,26 @@ void InputManager::setPauseCallback(std::function<void()> callback) {
 
 void InputManager::setResetCallback(std::function<void()> callback) {
     onReset = callback;
+}
+
+void InputManager::setLaserAttackCallback(std::function<void()> callback) {
+    onLaserAttack = callback;
+}
+
+void InputManager::setFistAttackCallback(std::function<void()> callback) {
+    onFistAttack = callback;
+}
+
+void InputManager::setUltimateAttackCallback(std::function<void()> callback) {
+    onUltimateAttack = callback;
+}
+
+void InputManager::setShieldCallback(std::function<void(bool)> callback) {
+    onShield = callback;
+}
+
+void InputManager::setTeleportCallback(std::function<void()> callback) {
+    onTeleport = callback;
 }
 
 void InputManager::setMouseLookActive(bool active) {
@@ -344,6 +373,26 @@ float InputManager::getCameraZoomInput() const {
     return getMouseScrollDelta();
 }
 
+bool InputManager::getLaserAttackInput() const {
+    return isKeyPressed(Key::MouseLeft) || isKeyPressed(Key::Q);
+}
+
+bool InputManager::getFistAttackInput() const {
+    return isKeyPressed(Key::E);
+}
+
+bool InputManager::getUltimateAttackInput() const {
+    return isKeyPressed(Key::R);
+}
+
+bool InputManager::getShieldInput() const {
+    return isKeyPressed(Key::MouseRight) || isKeyPressed(Key::Z);
+}
+
+bool InputManager::getTeleportInput() const {
+    return isKeyPressed(Key::X);
+}
+
 void InputManager::clearInputState() {
     for (auto& pair : keyStates) {
         pair.second = false;
@@ -420,6 +469,23 @@ void InputManager::processActionCallbacks() {
     }
     if (onReset && isActionJustPressed(Action::Reset)) {
         onReset();
+    }
+    
+    // PVP action callbacks
+    if (onLaserAttack && isActionJustPressed(Action::LaserAttack)) {
+        onLaserAttack();
+    }
+    if (onFistAttack && isActionJustPressed(Action::FistAttack)) {
+        onFistAttack();
+    }
+    if (onUltimateAttack && isActionJustPressed(Action::UltimateAttack)) {
+        onUltimateAttack();
+    }
+    if (onShield) {
+        onShield(getShieldInput());
+    }
+    if (onTeleport && isActionJustPressed(Action::Teleport)) {
+        onTeleport();
     }
 }
 

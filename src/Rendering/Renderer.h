@@ -94,8 +94,13 @@ public:
     void renderCube(const Vector3& position, const Vector3& scale, const Vector3& color);
     void renderSphere(const Vector3& position, float radius, const Vector3& color);
     void renderPlane(const Vector3& position, const Vector3& normal, float size, const Vector3& color);
-    void renderLine(const Vector3& start, const Vector3& end, const Vector3& color);
+    void renderLine(const Vector3& start, const Vector3& end, const Vector3& color, float intensity = 1.0f);
     void renderGrid(int size, float spacing, const Vector3& color);
+    
+    // PVP rendering
+    void renderShieldEffect(const Vector3& position, float radius, const Vector3& color, float opacity);
+    void renderBar(const Vector3& position, float width, float height, float fillPercentage, const Vector3& color);
+    void renderText(const Vector3& position, const std::string& text, const Vector3& color);
     
     // Lighting
     void addLight(const Light& light);

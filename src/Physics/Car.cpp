@@ -13,6 +13,7 @@ Car::Car()
     , throttleInput(0.0f)
     , brakeInput(0.0f)
     , steerInput(0.0f)
+    , handbrakeInput(false)
     , maxSteerAngle(30.0f)
     , maxSpeed(50.0f)
     , acceleration(20.0f)
@@ -138,6 +139,15 @@ void Car::setBoost(bool boost) {
         activateBoost();
     } else if (!boost) {
         deactivateBoost();
+    }
+}
+
+void Car::setHandbrake(bool handbrake) {
+    handbrakeInput = handbrake;
+    // Apply handbrake effect - increase friction and slow down
+    if (handbrake) {
+        velocity *= 0.95f; // Quick deceleration
+        angularVelocity *= 1.2f; // Enhanced rotation for drifting
     }
 }
 
@@ -344,6 +354,7 @@ void Car::reset() {
     throttleInput = 0.0f;
     brakeInput = 0.0f;
     steerInput = 0.0f;
+    handbrakeInput = false;
     currentBoost = boostCapacity;
     isBoosting = false;
     boostCooldown = 0.0f;

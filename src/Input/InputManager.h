@@ -1,4 +1,5 @@
 #pragma once
+#include "../Math/Vector2.h"
 #include <unordered_map>
 #include <functional>
 #include <vector>
@@ -12,6 +13,7 @@ public:
         MouseLeft, MouseRight, MouseMiddle,
         Escape, Enter, Tab,
         F1, F2, F3, F4, F5,
+        Q, E, R, T, Z, X, C, V,
         Count
     };
 
@@ -26,6 +28,12 @@ public:
         CameraZoom,
         Pause,
         Reset,
+        // PVP Actions
+        LaserAttack,
+        FistAttack,
+        UltimateAttack,
+        Shield,
+        Teleport,
         Count
     };
 
@@ -68,6 +76,13 @@ private:
     std::function<void(float)> onCameraZoom;
     std::function<void()> onPause;
     std::function<void()> onReset;
+    
+    // PVP callbacks
+    std::function<void()> onLaserAttack;
+    std::function<void()> onFistAttack;
+    std::function<void()> onUltimateAttack;
+    std::function<void(bool)> onShield;
+    std::function<void()> onTeleport;
 
 public:
     InputManager();
@@ -130,6 +145,13 @@ public:
     void setPauseCallback(std::function<void()> callback);
     void setResetCallback(std::function<void()> callback);
     
+    // PVP Callbacks
+    void setLaserAttackCallback(std::function<void()> callback);
+    void setFistAttackCallback(std::function<void()> callback);
+    void setUltimateAttackCallback(std::function<void()> callback);
+    void setShieldCallback(std::function<void(bool)> callback);
+    void setTeleportCallback(std::function<void()> callback);
+    
     // Input state management
     void setMouseLookActive(bool active);
     void setInputEnabled(bool enabled);
@@ -144,6 +166,13 @@ public:
     bool getHandbrakeInput() const;
     Vector2 getCameraLookInput() const;
     float getCameraZoomInput() const;
+    
+    // PVP input values
+    bool getLaserAttackInput() const;
+    bool getFistAttackInput() const;
+    bool getUltimateAttackInput() const;
+    bool getShieldInput() const;
+    bool getTeleportInput() const;
     
     // Utility functions
     void clearInputState();
