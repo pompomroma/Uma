@@ -29,18 +29,52 @@ vcpkg install glfw3 glew
 
 ## Building the Project
 
+### Quick Build
+
+```bash
+# Debug build (default - includes debug symbols)
+./build.sh
+
+# Release build (optimized)
+./build.sh release
+```
+
+### Manual Build
+
 ```bash
 mkdir build
 cd build
-cmake ..
+
+# Debug build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+make
+
+# Release build
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 ```
 
 ## Running the Game
 
 ```bash
-./RacingGame3D
+# Run the game
+./build/RacingGame3D
 ```
+
+## Debugging
+
+```bash
+# Quick debug with GDB
+./debug.sh
+
+# Debug with LLDB
+./debug.sh lldb
+
+# Check for memory leaks with Valgrind
+./debug.sh valgrind
+```
+
+For more debugging information, see [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md).
 
 ## Controls
 
