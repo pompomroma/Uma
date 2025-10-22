@@ -1,8 +1,14 @@
 #include "Renderer.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
+
+#ifdef PLATFORM_MOBILE
+// OpenGL ES 3.0 for mobile
+#include <GLES3/gl3.h>
+#else
+// Desktop OpenGL with GLEW
+#include <GL/glew.h>
+#endif
 
 Renderer::Renderer() 
     : screenWidth(1920)
@@ -35,12 +41,14 @@ bool Renderer::initialize(int width, int height) {
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
     
-    // Initialize OpenGL
+#ifndef PLATFORM_MOBILE
+    // Initialize GLEW on desktop
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << std::endl;
         return false;
     }
+#endif
     
     // Set OpenGL settings
     glViewport(0, 0, width, height);
@@ -240,11 +248,16 @@ void Renderer::setCullFace(bool enable) {
 
 void Renderer::setWireframe(bool enable) {
     renderState.wireframe = enable;
+    #ifdef PLATFORM_MOBILE
+    // glPolygonMode is not available in OpenGL ES. Ignore on mobile.
+    (void)enable;
+    #else
     if (enable) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+    #endif
 }
 
 void Renderer::setLineWidth(float width) {
@@ -546,6 +559,33 @@ void Renderer::resetStats() {
 }
 
 std::string Renderer::getVertexShaderSource() {
+    #ifdef PLATFORM_MOBILE
+    return R"(
+        #version 300 es
+        layout (location = 0) in vec3 aPos;
+        layout (location = 1) in vec3 aNormal;
+        layout (location = 2) in vec3 aColor;
+        layout (location = 3) in vec3 aTexCoord;
+
+        out vec3 FragPos;
+        out vec3 Normal;
+        out vec3 Color;
+        out vec3 TexCoord;
+
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+
+        void main() {
+            FragPos = vec3(model * vec4(aPos, 1.0));
+            Normal = mat3(transpose(inverse(model))) * aNormal;
+            Color = aColor;
+            TexCoord = aTexCoord;
+
+            gl_Position = projection * view * vec4(FragPos, 1.0);
+        }
+    )";
+    #else
     return R"(
         #version 330 core
         layout (location = 0) in vec3 aPos;
@@ -571,9 +611,55 @@ std::string Renderer::getVertexShaderSource() {
             gl_Position = projection * view * vec4(FragPos, 1.0);
         }
     )";
+    #endif
 }
 
 std::string Renderer::getFragmentShaderSource() {
+    #ifdef PLATFORM_MOBILE
+    return R"(
+        #version 300 es
+        precision mediump float;
+        in vec3 FragPos;
+        in vec3 Normal;
+        in vec3 Color;
+        in vec3 TexCoord;
+        
+        out vec4 FragColor;
+        
+        uniform vec3 color;
+        uniform vec3 cameraPosition;
+        
+        struct Light {
+            vec3 position;
+            vec3 color;
+            float intensity;
+            float attenuation;
+        };
+        
+        uniform int numLights;
+        uniform Light lights[8];
+        
+        void main() {
+            vec3 norm = normalize(Normal);
+            vec3 viewDir = normalize(cameraPosition - FragPos);
+            
+            vec3 result = vec3(0.1, 0.1, 0.1);
+            
+            for (int i = 0; i < numLights; i++) {
+                vec3 lightDir = normalize(lights[i].position - FragPos);
+                float distance = length(lights[i].position - FragPos);
+                float attenuation = 1.0 / (1.0 + lights[i].attenuation * distance * distance);
+                
+                float diff = max(dot(norm, lightDir), 0.0);
+                vec3 diffuse = lights[i].color * lights[i].intensity * diff * attenuation;
+                
+                result += diffuse;
+            }
+            
+            FragColor = vec4(result * color, 1.0);
+        }
+    )";
+    #else
     return R"(
         #version 330 core
         in vec3 FragPos;
@@ -616,6 +702,7 @@ std::string Renderer::getFragmentShaderSource() {
             FragColor = vec4(result * color, 1.0);
         }
     )";
+    #endif
 }
 
 std::string Renderer::getCarVertexShaderSource() {
@@ -635,6 +722,20 @@ std::string Renderer::getTrackFragmentShaderSource() {
 }
 
 std::string Renderer::getSkyboxVertexShaderSource() {
+    #ifdef PLATFORM_MOBILE
+    return R"(
+        #version 300 es
+        layout (location = 0) in vec3 aPos;
+        out vec3 TexCoord;
+        uniform mat4 view;
+        uniform mat4 projection;
+        void main() {
+            TexCoord = aPos;
+            vec4 pos = projection * view * vec4(aPos, 1.0);
+            gl_Position = pos.xyww;
+        }
+    )";
+    #else
     return R"(
         #version 330 core
         layout (location = 0) in vec3 aPos;
@@ -650,9 +751,21 @@ std::string Renderer::getSkyboxVertexShaderSource() {
             gl_Position = pos.xyww;
         }
     )";
+    #endif
 }
 
 std::string Renderer::getSkyboxFragmentShaderSource() {
+    #ifdef PLATFORM_MOBILE
+    return R"(
+        #version 300 es
+        precision mediump float;
+        in vec3 TexCoord;
+        out vec4 FragColor;
+        void main() {
+            FragColor = vec4(0.5, 0.7, 1.0, 1.0);
+        }
+    )";
+    #else
     return R"(
         #version 330 core
         in vec3 TexCoord;
@@ -662,4 +775,33 @@ std::string Renderer::getSkyboxFragmentShaderSource() {
             FragColor = vec4(0.5, 0.7, 1.0, 1.0); // Simple sky color
         }
     )";
+    #endif
+}
+
+// --- UI and utility rendering stubs (minimal implementations) ---
+
+void Renderer::renderSphere(const Vector3& position, float radius, const Vector3& color, float opacity) {
+    (void)opacity; // Opacity not implemented in basic pipeline
+    renderSphere(position, radius, color);
+}
+
+void Renderer::renderHealthBar(const Vector3& position, float percentage, float width, float height) {
+    (void)position; (void)percentage; (void)width; (void)height;
+    // Not implemented; UI system would go here
+}
+
+void Renderer::renderBar(float x, float y, float width, float height, float percentage, const Vector3& fillColor, const Vector3& bgColor) {
+    (void)x; (void)y; (void)width; (void)height; (void)percentage; (void)fillColor; (void)bgColor;
+}
+
+void Renderer::renderQuad(const Vector3& position, float width, float height, const Vector3& color, float opacity) {
+    (void)position; (void)width; (void)height; (void)color; (void)opacity;
+}
+
+void Renderer::renderText(const std::string& text, float x, float y, float scale, const Vector3& color) {
+    (void)text; (void)x; (void)y; (void)scale; (void)color;
+}
+
+void Renderer::renderAbilityIcon(float x, float y, float width, float height, const std::string& key, bool isReady) {
+    (void)x; (void)y; (void)width; (void)height; (void)key; (void)isReady;
 }

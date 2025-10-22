@@ -2,7 +2,13 @@
 #include <iostream>
 #include <chrono>
 #include <algorithm>
+
+#ifdef PLATFORM_MOBILE
+#include <SDL2/SDL.h>
+#include <GLES3/gl3.h>
+#else
 #include <GLFW/glfw3.h>
+#endif
 
 Game::Game() 
     : currentState(GameState::Menu)
@@ -45,6 +51,42 @@ bool Game::initialize(int width, int height, const std::string& title) {
     screenWidth = width;
     screenHeight = height;
     
+#ifdef PLATFORM_MOBILE
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0) {
+        std::cerr << "Failed to initialize SDL: " << SDL_GetError() << std::endl;
+        return false;
+    }
+    // Request OpenGL ES 3.0 context
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+    SDL_Window* sdlWindow = SDL_CreateWindow(
+        title.c_str(),
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        width,
+        height,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
+    );
+    if (!sdlWindow) {
+        std::cerr << "Failed to create SDL window: " << SDL_GetError() << std::endl;
+        return false;
+    }
+    SDL_GLContext glContext = SDL_GL_CreateContext(sdlWindow);
+    if (!glContext) {
+        std::cerr << "Failed to create GL context: " << SDL_GetError() << std::endl;
+        return false;
+    }
+    SDL_GL_MakeCurrent(sdlWindow, glContext);
+    SDL_GL_SetSwapInterval(vsync ? 1 : 0);
+    // Store opaque handles
+    platformWindow = sdlWindow;
+    platformGLContext = glContext;
+#else
     // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -66,6 +108,7 @@ bool Game::initialize(int width, int height, const std::string& title) {
     }
     
     glfwMakeContextCurrent(window);
+#endif
     
     // Initialize renderer
     renderer = std::make_unique<Renderer>();
@@ -113,13 +156,41 @@ void Game::shutdown() {
     localPlayer = nullptr;
     pvpPlayers.clear();
     
+#ifdef PLATFORM_MOBILE
+    if (platformGLContext) {
+        SDL_GL_DeleteContext(static_cast<SDL_GLContext>(platformGLContext));
+        platformGLContext = nullptr;
+    }
+    if (platformWindow) {
+        SDL_DestroyWindow(static_cast<SDL_Window*>(platformWindow));
+        platformWindow = nullptr;
+    }
+    SDL_Quit();
+#else
     glfwTerminate();
+#endif
 }
 
 void Game::run() {
     auto lastTime = std::chrono::high_resolution_clock::now();
     
     while (isRunning) {
+#ifdef PLATFORM_MOBILE
+        // Handle SDL events
+        SDL_Event e;
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                isRunning = false;
+            }
+            if (inputManager) {
+                inputManager->update(0.0f);
+                inputManager->setMouseLookActive(false);
+                #ifdef PLATFORM_MOBILE
+                inputManager->handleSDLEvent(e);
+                #endif
+            }
+        }
+#endif
         auto currentTime = std::chrono::high_resolution_clock::now();
         deltaTime = std::chrono::duration<float>(currentTime - lastTime).count();
         lastTime = currentTime;
@@ -198,6 +269,13 @@ void Game::render() {
     }
     
     renderer->endFrame();
+#ifdef PLATFORM_MOBILE
+    // Swap buffers via SDL on mobile using stored window handle
+    SDL_Window* window = static_cast<SDL_Window*>(platformWindow);
+    if (window) {
+        SDL_GL_SwapWindow(window);
+    }
+#endif
 }
 
 void Game::handleInput() {

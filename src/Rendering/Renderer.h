@@ -141,7 +141,7 @@ public:
     void renderBoundingBox(const Vector3& min, const Vector3& max, const Vector3& color);
     
     // Combat/PvP rendering
-    void renderSphere(const Vector3& position, float radius, const Vector3& color, float opacity = 1.0f);
+    void renderSphere(const Vector3& position, float radius, const Vector3& color, float opacity);
     void renderHealthBar(const Vector3& position, float percentage, float width, float height);
     void renderBar(float x, float y, float width, float height, float percentage, const Vector3& fillColor, const Vector3& bgColor);
     void renderQuad(const Vector3& position, float width, float height, const Vector3& color, float opacity = 1.0f);

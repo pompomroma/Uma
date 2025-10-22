@@ -5,6 +5,10 @@
 #include <vector>
 #include <string>
 
+#ifdef PLATFORM_MOBILE
+#include <SDL2/SDL.h>
+#endif
+
 class InputManager {
 public:
     enum class Key {
@@ -67,6 +71,21 @@ private:
     bool isMouseLookActive;
     bool isInputEnabled;
     
+    #ifdef PLATFORM_MOBILE
+    // Touch input state (simple virtual controls)
+    float touchSteerAxis = 0.0f;     // -1..1 (left/right)
+    float touchThrottleAxis = 0.0f;  // 0..1
+    float touchBrakeAxis = 0.0f;     // 0..1
+    bool touchBoost = false;
+    bool touchHandbrake = false;
+    SDL_FingerID leftFingerId = -1;   // steering finger (left half)
+    SDL_FingerID rightFingerId = -1;  // throttle/brake finger (right half)
+    float leftStartX = 0.0f;
+    float rightStartY = 0.0f;
+    int screenWidthPx = 0;
+    int screenHeightPx = 0;
+    #endif
+    
     // Input callbacks
     std::function<void(float)> onAccelerate;
     std::function<void(float)> onBrake;
@@ -99,6 +118,10 @@ public:
     void processKeyboardInput();
     void processMouseInput();
     void processGamepadInput();
+    #ifdef PLATFORM_MOBILE
+    void handleSDLEvent(const SDL_Event& e);
+    void setScreenSize(int width, int height) { screenWidthPx = width; screenHeightPx = height; }
+    #endif
     
     // Key state queries
     bool isKeyPressed(Key key) const;

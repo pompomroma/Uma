@@ -76,6 +76,10 @@ private:
     bool showHUD;
     bool showDebugInfo;
 
+    // Platform window/context handles (opaque to avoid header deps)
+    void* platformWindow = nullptr;
+    void* platformGLContext = nullptr;
+
 public:
     Game();
     ~Game();

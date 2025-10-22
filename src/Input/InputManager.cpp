@@ -47,19 +47,68 @@ void InputManager::update(float deltaTime) {
 }
 
 void InputManager::processKeyboardInput() {
-    // This would process keyboard input from GLFW, DirectInput, etc.
-    // For now, it's a placeholder
+    // Desktop keyboard input would be handled by platform layer
 }
 
 void InputManager::processMouseInput() {
-    // This would process mouse input from GLFW, DirectInput, etc.
-    // For now, it's a placeholder
+    // Desktop mouse input would be handled by platform layer
 }
 
 void InputManager::processGamepadInput() {
-    // This would process gamepad input from XInput, DirectInput, etc.
-    // For now, it's a placeholder
+    // Gamepad input would be handled by platform layer
 }
+
+#ifdef PLATFORM_MOBILE
+void InputManager::handleSDLEvent(const SDL_Event& e) {
+    // Minimal virtual control scheme:
+    // - Left half: steer via horizontal movement of first finger
+    // - Right half: vertical movement for throttle (up) and brake (down)
+    // - Two-tap right half toggles boost; long-press right half toggles handbrake
+    switch (e.type) {
+        case SDL_FINGERDOWN: {
+            const float x = e.tfinger.x; // 0..1 normalized
+            const float y = e.tfinger.y; // 0..1 normalized
+            if (x < 0.5f && leftFingerId == -1) {
+                leftFingerId = e.tfinger.fingerId;
+                leftStartX = x;
+                touchSteerAxis = 0.0f;
+            } else if (x >= 0.5f && rightFingerId == -1) {
+                rightFingerId = e.tfinger.fingerId;
+                rightStartY = y;
+                touchThrottleAxis = 0.0f;
+                touchBrakeAxis = 0.0f;
+            }
+            break;
+        }
+        case SDL_FINGERMOTION: {
+            if (e.tfinger.fingerId == leftFingerId) {
+                float dx = (e.tfinger.x - leftStartX) * 2.0f; // scale to -1..1 range roughly
+                touchSteerAxis = std::max(-1.0f, std::min(1.0f, dx * 3.0f));
+            } else if (e.tfinger.fingerId == rightFingerId) {
+                float dy = (rightStartY - e.tfinger.y) * 2.0f; // up positive
+                float throttle = std::max(0.0f, dy);
+                float brake = std::max(0.0f, -dy);
+                touchThrottleAxis = std::min(1.0f, throttle);
+                touchBrakeAxis = std::min(1.0f, brake);
+            }
+            break;
+        }
+        case SDL_FINGERUP: {
+            if (e.tfinger.fingerId == leftFingerId) {
+                leftFingerId = -1;
+                touchSteerAxis = 0.0f;
+            } else if (e.tfinger.fingerId == rightFingerId) {
+                rightFingerId = -1;
+                touchThrottleAxis = 0.0f;
+                touchBrakeAxis = 0.0f;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+#endif
 
 bool InputManager::isKeyPressed(Key key) const {
     auto it = keyStates.find(key);
@@ -217,6 +266,13 @@ void InputManager::setDefaultBindings() {
     bindKeyToAction(Key::MouseLeft, Action::CameraLook);
     bindKeyToAction(Key::Escape, Action::Pause);
     bindKeyToAction(Key::F1, Action::Reset);
+
+    // Combat bindings (desktop defaults)
+    bindKeyToAction(Key::F1, Action::Attack1);
+    bindKeyToAction(Key::F2, Action::Attack2);
+    bindKeyToAction(Key::F3, Action::Shield);
+    bindKeyToAction(Key::F4, Action::Teleport);
+    bindKeyToAction(Key::F5, Action::Interact);
 }
 
 void InputManager::setAccelerateCallback(std::function<void(float)> callback) {
@@ -266,6 +322,9 @@ void InputManager::setInputEnabled(bool enabled) {
 float InputManager::getAccelerateInput() const {
     float input = 0.0f;
     
+#ifdef PLATFORM_MOBILE
+    input = std::max(input, touchThrottleAxis);
+#else
     // Keyboard input
     if (isKeyPressed(Key::W) || isKeyPressed(Key::Up)) {
         input = 1.0f;
@@ -276,6 +335,7 @@ float InputManager::getAccelerateInput() const {
     if (rightTrigger > 0.1f) {
         input = std::max(input, rightTrigger);
     }
+#endif
     
     return input;
 }
@@ -283,6 +343,9 @@ float InputManager::getAccelerateInput() const {
 float InputManager::getBrakeInput() const {
     float input = 0.0f;
     
+#ifdef PLATFORM_MOBILE
+    input = std::max(input, touchBrakeAxis);
+#else
     // Keyboard input
     if (isKeyPressed(Key::S) || isKeyPressed(Key::Down)) {
         input = 1.0f;
@@ -293,6 +356,7 @@ float InputManager::getBrakeInput() const {
     if (leftTrigger > 0.1f) {
         input = std::max(input, leftTrigger);
     }
+#endif
     
     return input;
 }
@@ -300,6 +364,9 @@ float InputManager::getBrakeInput() const {
 float InputManager::getSteerInput() const {
     float input = 0.0f;
     
+#ifdef PLATFORM_MOBILE
+    input = touchSteerAxis;
+#else
     // Keyboard input
     if (isKeyPressed(Key::A) || isKeyPressed(Key::Left)) {
         input -= 1.0f;
@@ -313,16 +380,25 @@ float InputManager::getSteerInput() const {
     if (std::abs(leftStickX) > 0.1f) {
         input = leftStickX;
     }
+#endif
     
     return input;
 }
 
 bool InputManager::getBoostInput() const {
+    #ifdef PLATFORM_MOBILE
+    return touchBoost;
+    #else
     return isKeyPressed(Key::Space) || isGamepadButtonPressed(0); // A button
+    #endif
 }
 
 bool InputManager::getHandbrakeInput() const {
+    #ifdef PLATFORM_MOBILE
+    return touchHandbrake;
+    #else
     return isKeyPressed(Key::Shift) || isGamepadButtonPressed(1); // B button
+    #endif
 }
 
 Vector2 InputManager::getCameraLookInput() const {
@@ -421,7 +497,34 @@ void InputManager::processActionCallbacks() {
     if (onReset && isActionJustPressed(Action::Reset)) {
         onReset();
     }
+    // Combat actions
+    if (onAttack1 && isActionJustPressed(Action::Attack1)) {
+        onAttack1();
+    }
+    if (onAttack2 && isActionJustPressed(Action::Attack2)) {
+        onAttack2();
+    }
+    if (onShield && isActionJustPressed(Action::Shield)) {
+        onShield();
+    }
+    if (onTeleport && isActionJustPressed(Action::Teleport)) {
+        onTeleport();
+    }
+    if (onInteract && isActionJustPressed(Action::Interact)) {
+        onInteract();
+    }
+    if (onStatMenu && isActionJustPressed(Action::StatMenu)) {
+        onStatMenu();
+    }
 }
+
+// Combat callback registration
+void InputManager::setAttack1Callback(std::function<void()> callback) { onAttack1 = std::move(callback); }
+void InputManager::setAttack2Callback(std::function<void()> callback) { onAttack2 = std::move(callback); }
+void InputManager::setShieldCallback(std::function<void()> callback) { onShield = std::move(callback); }
+void InputManager::setTeleportCallback(std::function<void()> callback) { onTeleport = std::move(callback); }
+void InputManager::setInteractCallback(std::function<void()> callback) { onInteract = std::move(callback); }
+void InputManager::setStatMenuCallback(std::function<void()> callback) { onStatMenu = std::move(callback); }
 
 InputManager::Key InputManager::getKeyFromString(const std::string& keyName) const {
     // This would convert string names to Key enum values
