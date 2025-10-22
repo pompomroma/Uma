@@ -32,6 +32,10 @@ Game::Game()
     , autoSteer(false)
     , showHUD(true)
     , showDebugInfo(false)
+    , combatModeEnabled(false)
+    , pvpMode(false)
+    , maxPlayers(4)
+    , matchTimeLimit(300.0f)
     , playerCar(nullptr) {
 }
 
@@ -79,6 +83,17 @@ bool Game::initialize(int width, int height, const std::string& title) {
     // Initialize physics engine
     physicsEngine = std::make_unique<PhysicsEngine>();
     
+    // Initialize combat system
+    combatSystem = std::make_unique<CombatSystem>(this);
+    
+    // Initialize combat HUD
+    combatHUD = std::make_unique<CombatHUD>(renderer.get(), combatSystem.get());
+    combatHUD->initialize(width, height);
+    
+    // Initialize particle system
+    particleSystem = std::make_unique<ParticleSystem>(renderer.get());
+    particleSystem->initialize();
+    
     // Initialize game systems
     initializeGame();
     
@@ -100,6 +115,9 @@ void Game::shutdown() {
     }
     
     physicsEngine.reset();
+    combatSystem.reset();
+    combatHUD.reset();
+    particleSystem.reset();
     camera.reset();
     track.reset();
     cars.clear();
@@ -140,10 +158,21 @@ void Game::update(float dt) {
     if (!isPaused) {
         handleInput();
         updatePhysics(dt);
-        updateGameplay(dt);
+        
+        if (currentState == GameState::Combat) {
+            updateCombat(dt);
+        } else {
+            updateGameplay(dt);
+        }
+        
         updateCamera(dt);
         updateParticles(dt);
         updateTrails(dt);
+        
+        // Update particle system
+        if (particleSystem) {
+            particleSystem->update(dt);
+        }
     }
     
     updateUI(dt);
@@ -164,13 +193,28 @@ void Game::render() {
             renderGame();
             renderPauseMenu();
             break;
+        case GameState::Combat:
+            renderGame();
+            renderProjectiles();
+            renderCombatEffects();
+            break;
+        case GameState::CombatPaused:
+            renderGame();
+            renderProjectiles();
+            renderCombatEffects();
+            renderPauseMenu();
+            break;
         case GameState::GameOver:
             renderGame();
             break;
     }
     
     if (showHUD) {
-        renderHUD();
+        if (currentState == GameState::Combat || currentState == GameState::CombatPaused) {
+            renderCombatHUD();
+        } else {
+            renderHUD();
+        }
     }
     
     if (showDebugInfo) {
@@ -282,6 +326,7 @@ void Game::updateCamera(float dt) {
 void Game::setupInputCallbacks() {
     if (!inputManager) return;
     
+    // Racing callbacks
     inputManager->setAccelerateCallback([this](float input) { onAccelerate(input); });
     inputManager->setBrakeCallback([this](float input) { onBrake(input); });
     inputManager->setSteerCallback([this](float input) { onSteer(input); });
@@ -291,6 +336,20 @@ void Game::setupInputCallbacks() {
     inputManager->setCameraZoomCallback([this](float delta) { onCameraZoom(delta); });
     inputManager->setPauseCallback([this]() { onPause(); });
     inputManager->setResetCallback([this]() { onReset(); });
+    
+    // Combat callbacks
+    inputManager->setFireLaserCallback([this]() { onFireLaser(); });
+    inputManager->setFirePlasmaCallback([this]() { onFirePlasma(); });
+    inputManager->setFireMissileCallback([this]() { onFireMissile(); });
+    inputManager->setFireEnergyBallCallback([this]() { onFireEnergyBall(); });
+    inputManager->setFistAttackCallback([this]() { onFistAttack(); });
+    inputManager->setActivateShieldCallback([this]() { onActivateShield(); });
+    inputManager->setTeleportCallback([this](Vector2 pos) { onTeleport(pos); });
+    inputManager->setDashCallback([this]() { onDash(); });
+    inputManager->setEnergyBurstCallback([this]() { onEnergyBurst(); });
+    inputManager->setHealCallback([this]() { onHeal(); });
+    inputManager->setToggleCombatModeCallback([this](bool enabled) { onToggleCombatMode(enabled); });
+    inputManager->setAimCallback([this](float x, float y) { onAim(x, y); });
 }
 
 void Game::onAccelerate(float input) {
@@ -506,6 +565,7 @@ void Game::initializeGame() {
     initializeTrack();
     initializeCamera();
     initializeInput();
+    initializeCombat();
 }
 
 void Game::initializeCars() {
@@ -604,4 +664,261 @@ void Game::updateParticles(float dt) {
 
 void Game::updateTrails(float dt) {
     // Trail update
+}
+
+void Game::initializeCombat() {
+    if (combatSystem) {
+        combatSystem->initialize();
+        setupCombatCallbacks();
+    }
+}
+
+void Game::setupCombatCallbacks() {
+    if (!combatSystem) return;
+    
+    // Set up combat system callbacks
+    combatSystem->setPlayerDamagedCallback([this](Car* attacker, Car* victim, float damage) {
+        // Handle player damage events (e.g., show damage numbers, screen effects)
+        if (particleSystem && victim) {
+            particleSystem->createDamageEffect(victim->getPosition(), damage);
+        }
+    });
+    
+    combatSystem->setPlayerKilledCallback([this](Car* attacker, Car* victim) {
+        // Handle player death events (e.g., show kill feed, update scores)
+        if (particleSystem && victim) {
+            particleSystem->createExplosion(victim->getPosition(), 5.0f, Projectile::ProjectileType::Missile);
+        }
+    });
+    
+    combatSystem->setPlayerRespawnedCallback([this](Car* player) {
+        // Handle player respawn events (e.g., spawn effects)
+        if (particleSystem && player) {
+            particleSystem->createTeleportEffect(player->getPosition(), player->getPosition());
+        }
+    });
+    
+    combatSystem->setProjectileCreatedCallback([this](Projectile* projectile) {
+        // Handle projectile creation (e.g., muzzle flash, launch effects)
+        if (particleSystem && projectile) {
+            Vector3 pos = projectile->getPosition();
+            Vector3 dir = projectile->getDirection();
+            particleSystem->createEffect(ParticleSystem::EffectType::Sparks, pos, dir);
+        }
+    });
+    
+    combatSystem->setExplosionCallback([this](const Vector3& position, float radius, Projectile::ProjectileType type) {
+        // Handle explosions
+        if (particleSystem) {
+            particleSystem->createExplosion(position, radius, type);
+        }
+    });
+    
+    combatSystem->setMatchEndCallback([this]() {
+        // Handle match end
+        setState(GameState::GameOver);
+    });
+}
+
+void Game::updateCombat(float deltaTime) {
+    if (combatSystem) {
+        combatSystem->update(deltaTime);
+    }
+}
+
+void Game::startCombatMatch() {
+    if (combatSystem) {
+        combatSystem->startMatch();
+        setState(GameState::Combat);
+        
+        // Add all cars to combat
+        for (auto& car : cars) {
+            combatSystem->addPlayer(car.get());
+        }
+        
+        // Set player car for HUD
+        if (combatHUD && playerCar) {
+            combatHUD->setPlayerCar(playerCar);
+        }
+    }
+}
+
+void Game::endCombatMatch() {
+    if (combatSystem) {
+        combatSystem->endMatch();
+        setState(GameState::GameOver);
+    }
+}
+
+void Game::addPlayerToCombat(Car* car) {
+    if (combatSystem && car) {
+        combatSystem->addPlayer(car);
+    }
+}
+
+void Game::removePlayerFromCombat(Car* car) {
+    if (combatSystem && car) {
+        combatSystem->removePlayer(car);
+    }
+}
+
+void Game::renderCombatHUD() {
+    if (combatHUD) {
+        combatHUD->update(deltaTime);
+        combatHUD->render();
+    }
+}
+
+void Game::renderProjectiles() {
+    if (!renderer || !combatSystem) return;
+    
+    // Render all active projectiles
+    // This would iterate through the combat system's projectiles and render them
+    // For now, this is a placeholder
+}
+
+void Game::renderCombatEffects() {
+    if (particleSystem) {
+        particleSystem->render();
+    }
+}
+
+Vector3 Game::screenToWorldPosition(Vector2 screenPos) {
+    // Convert screen coordinates to world position
+    // This is a simplified implementation
+    if (!camera) return Vector3::zero();
+    
+    // Normalize screen coordinates (-1 to 1)
+    float normalizedX = (screenPos.x / screenWidth) * 2.0f - 1.0f;
+    float normalizedY = 1.0f - (screenPos.y / screenHeight) * 2.0f;
+    
+    // Project onto ground plane (y = 0)
+    // This is a simplified projection - a full implementation would use proper ray casting
+    Vector3 cameraPos = camera->getPosition();
+    Vector3 forward = camera->getForward();
+    
+    // Calculate intersection with ground plane
+    float t = -cameraPos.y / forward.y;
+    Vector3 worldPos = cameraPos + forward * t;
+    
+    // Apply screen offset
+    Vector3 right = camera->getRight();
+    Vector3 up = camera->getUp();
+    worldPos += right * normalizedX * 50.0f; // Scale factor
+    worldPos += up * normalizedY * 50.0f;
+    
+    return worldPos;
+}
+
+// Combat input handlers
+void Game::onFireLaser() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::LaserAttack);
+    }
+}
+
+void Game::onFirePlasma() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::PlasmaBlast);
+    }
+}
+
+void Game::onFireMissile() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::MissileStrike);
+    }
+}
+
+void Game::onFireEnergyBall() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::EnergyBall);
+    }
+}
+
+void Game::onFistAttack() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::FistAttack);
+    }
+}
+
+void Game::onActivateShield() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::Shield);
+    }
+}
+
+void Game::onTeleport(Vector2 mousePos) {
+    if (combatSystem && playerCar) {
+        Vector3 worldPos = screenToWorldPosition(mousePos);
+        combatSystem->usePlayerAbilityWithTarget(playerCar, PlayerAbilities::AbilityType::Teleport, worldPos);
+    }
+}
+
+void Game::onDash() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::Dash);
+    }
+}
+
+void Game::onEnergyBurst() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::EnergyBurst);
+    }
+}
+
+void Game::onHeal() {
+    if (combatSystem && playerCar) {
+        combatSystem->usePlayerAbility(playerCar, PlayerAbilities::AbilityType::Heal);
+    }
+}
+
+void Game::onToggleCombatMode(bool enabled) {
+    combatModeEnabled = enabled;
+    if (playerCar) {
+        playerCar->setCombatMode(enabled);
+    }
+    
+    if (enabled && currentState == GameState::Playing) {
+        startCombatMatch();
+    }
+}
+
+void Game::onAim(float deltaX, float deltaY) {
+    if (playerCar && combatModeEnabled) {
+        // Update aim direction based on mouse/input delta
+        Vector3 currentAim = playerCar->getAimDirection();
+        
+        // Apply aim sensitivity
+        float sensitivity = cameraSensitivity * 0.1f;
+        
+        // Update aim direction (simplified - would need proper 3D rotation)
+        Vector3 right = playerCar->getRight();
+        Vector3 up = Vector3::up();
+        
+        Vector3 newAim = currentAim;
+        newAim += right * deltaX * sensitivity;
+        newAim += up * deltaY * sensitivity;
+        
+        playerCar->setAimDirection(newAim.normalized());
+    }
+}
+
+// Settings
+void Game::setCombatModeEnabled(bool enabled) {
+    combatModeEnabled = enabled;
+}
+
+void Game::setPvpMode(bool enabled) {
+    pvpMode = enabled;
+}
+
+void Game::setMaxPlayers(int max) {
+    maxPlayers = std::max(1, max);
+}
+
+void Game::setMatchTimeLimit(float time) {
+    matchTimeLimit = std::max(60.0f, time);
+    if (combatSystem) {
+        combatSystem->setMatchTimeLimit(time);
+    }
 }

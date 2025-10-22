@@ -217,6 +217,26 @@ void InputManager::setDefaultBindings() {
     bindKeyToAction(Key::MouseLeft, Action::CameraLook);
     bindKeyToAction(Key::Escape, Action::Pause);
     bindKeyToAction(Key::F1, Action::Reset);
+    
+    // Combat controls
+    bindKeyToAction(Key::MouseLeft, Action::FireLaser);
+    bindKeyToAction(Key::MouseRight, Action::FirePlasma);
+    bindKeyToAction(Key::Q, Action::FireMissile);
+    bindKeyToAction(Key::E, Action::FireEnergyBall);
+    bindKeyToAction(Key::F, Action::FistAttack);
+    bindKeyToAction(Key::R, Action::ActivateShield);
+    bindKeyToAction(Key::MouseMiddle, Action::Teleport);
+    bindKeyToAction(Key::Shift, Action::Dash);
+    bindKeyToAction(Key::G, Action::EnergyBurst);
+    bindKeyToAction(Key::H, Action::Heal);
+    bindKeyToAction(Key::Tab, Action::ToggleCombatMode);
+    
+    // Number keys for quick ability access
+    bindKeyToAction(Key::Num1, Action::FireLaser);
+    bindKeyToAction(Key::Num2, Action::FirePlasma);
+    bindKeyToAction(Key::Num3, Action::FireMissile);
+    bindKeyToAction(Key::Num4, Action::FireEnergyBall);
+    bindKeyToAction(Key::Num5, Action::FistAttack);
 }
 
 void InputManager::setAccelerateCallback(std::function<void(float)> callback) {
@@ -253,6 +273,54 @@ void InputManager::setPauseCallback(std::function<void()> callback) {
 
 void InputManager::setResetCallback(std::function<void()> callback) {
     onReset = callback;
+}
+
+void InputManager::setFireLaserCallback(std::function<void()> callback) {
+    onFireLaser = callback;
+}
+
+void InputManager::setFirePlasmaCallback(std::function<void()> callback) {
+    onFirePlasma = callback;
+}
+
+void InputManager::setFireMissileCallback(std::function<void()> callback) {
+    onFireMissile = callback;
+}
+
+void InputManager::setFireEnergyBallCallback(std::function<void()> callback) {
+    onFireEnergyBall = callback;
+}
+
+void InputManager::setFistAttackCallback(std::function<void()> callback) {
+    onFistAttack = callback;
+}
+
+void InputManager::setActivateShieldCallback(std::function<void()> callback) {
+    onActivateShield = callback;
+}
+
+void InputManager::setTeleportCallback(std::function<void(Vector2)> callback) {
+    onTeleport = callback;
+}
+
+void InputManager::setDashCallback(std::function<void()> callback) {
+    onDash = callback;
+}
+
+void InputManager::setEnergyBurstCallback(std::function<void()> callback) {
+    onEnergyBurst = callback;
+}
+
+void InputManager::setHealCallback(std::function<void()> callback) {
+    onHeal = callback;
+}
+
+void InputManager::setToggleCombatModeCallback(std::function<void(bool)> callback) {
+    onToggleCombatMode = callback;
+}
+
+void InputManager::setAimCallback(std::function<void(float, float)> callback) {
+    onAim = callback;
 }
 
 void InputManager::setMouseLookActive(bool active) {
@@ -344,6 +412,24 @@ float InputManager::getCameraZoomInput() const {
     return getMouseScrollDelta();
 }
 
+Vector2 InputManager::getAimInput() const {
+    Vector2 input(0.0f, 0.0f);
+    
+    // Use mouse delta for aiming in combat mode
+    input.x = getMouseDeltaX();
+    input.y = getMouseDeltaY();
+    
+    // Also support gamepad right stick for aiming
+    input.x += getRightStickX();
+    input.y += getRightStickY();
+    
+    return input;
+}
+
+bool InputManager::getCombatModeToggle() const {
+    return isActionJustPressed(Action::ToggleCombatMode);
+}
+
 void InputManager::clearInputState() {
     for (auto& pair : keyStates) {
         pair.second = false;
@@ -420,6 +506,48 @@ void InputManager::processActionCallbacks() {
     }
     if (onReset && isActionJustPressed(Action::Reset)) {
         onReset();
+    }
+    
+    // Process combat action callbacks
+    if (onFireLaser && isActionJustPressed(Action::FireLaser)) {
+        onFireLaser();
+    }
+    if (onFirePlasma && isActionJustPressed(Action::FirePlasma)) {
+        onFirePlasma();
+    }
+    if (onFireMissile && isActionJustPressed(Action::FireMissile)) {
+        onFireMissile();
+    }
+    if (onFireEnergyBall && isActionJustPressed(Action::FireEnergyBall)) {
+        onFireEnergyBall();
+    }
+    if (onFistAttack && isActionJustPressed(Action::FistAttack)) {
+        onFistAttack();
+    }
+    if (onActivateShield && isActionJustPressed(Action::ActivateShield)) {
+        onActivateShield();
+    }
+    if (onTeleport && isActionJustPressed(Action::Teleport)) {
+        Vector2 mousePos(getMouseX(), getMouseY());
+        onTeleport(mousePos);
+    }
+    if (onDash && isActionJustPressed(Action::Dash)) {
+        onDash();
+    }
+    if (onEnergyBurst && isActionJustPressed(Action::EnergyBurst)) {
+        onEnergyBurst();
+    }
+    if (onHeal && isActionJustPressed(Action::Heal)) {
+        onHeal();
+    }
+    if (onToggleCombatMode && isActionJustPressed(Action::ToggleCombatMode)) {
+        static bool combatMode = false;
+        combatMode = !combatMode;
+        onToggleCombatMode(combatMode);
+    }
+    if (onAim) {
+        Vector2 aimInput = getAimInput();
+        onAim(aimInput.x, aimInput.y);
     }
 }
 

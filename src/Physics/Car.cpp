@@ -13,6 +13,13 @@ Car::Car()
     , throttleInput(0.0f)
     , brakeInput(0.0f)
     , steerInput(0.0f)
+    , handbrakeInput(false)
+    , combatMode(false)
+    , aimDirection(0.0f, 0.0f, 1.0f)
+    , health(100.0f)
+    , maxHealth(100.0f)
+    , isInvulnerable(false)
+    , invulnerabilityTimer(0.0f)
     , maxSteerAngle(30.0f)
     , maxSpeed(50.0f)
     , acceleration(20.0f)
@@ -141,12 +148,17 @@ void Car::setBoost(bool boost) {
     }
 }
 
+void Car::setHandbrake(bool handbrake) {
+    handbrakeInput = handbrake;
+}
+
 void Car::update(float deltaTime) {
     updatePhysics(deltaTime);
     updateWheels(deltaTime);
     updateEngine(deltaTime);
     updateBoost(deltaTime);
     updateVisualEffects(deltaTime);
+    updateCombat(deltaTime);
     
     // Update boost cooldown
     if (boostCooldown > 0.0f) {
@@ -201,6 +213,12 @@ void Car::updateWheels(float deltaTime) {
             // Apply friction
             Vector3 frictionForce = -velocity * friction;
             velocity += frictionForce * deltaTime;
+            
+            // Apply handbrake
+            if (handbrakeInput) {
+                Vector3 handbrakeForce = -velocity * 0.8f; // Strong braking
+                velocity += handbrakeForce * deltaTime;
+            }
         }
     }
 }
@@ -344,11 +362,19 @@ void Car::reset() {
     throttleInput = 0.0f;
     brakeInput = 0.0f;
     steerInput = 0.0f;
+    handbrakeInput = false;
     currentBoost = boostCapacity;
     isBoosting = false;
     boostCooldown = 0.0f;
     engine.rpm = 0.0f;
     engine.throttle = 0.0f;
+    
+    // Reset combat state
+    health = maxHealth;
+    combatMode = false;
+    aimDirection = Vector3::forward();
+    isInvulnerable = false;
+    invulnerabilityTimer = 0.0f;
     
     for (int i = 0; i < 4; i++) {
         wheels[i].velocity = Vector3::zero();
@@ -360,6 +386,112 @@ void Car::reset() {
 void Car::resetToPosition(const Vector3& pos) {
     reset();
     position = pos;
+}
+
+void Car::updateCombat(float deltaTime) {
+    // Update invulnerability timer
+    if (isInvulnerable && invulnerabilityTimer > 0.0f) {
+        invulnerabilityTimer -= deltaTime;
+        if (invulnerabilityTimer <= 0.0f) {
+            isInvulnerable = false;
+        }
+    }
+    
+    // Update aim direction in combat mode
+    if (combatMode) {
+        // In combat mode, aim direction could be updated based on input
+        // For now, it defaults to forward direction
+        aimDirection = getForward();
+    }
+}
+
+void Car::setCombatMode(bool enabled) {
+    combatMode = enabled;
+    if (enabled) {
+        aimDirection = getForward();
+    }
+}
+
+void Car::setAimDirection(const Vector3& direction) {
+    if (direction.length() > 0.001f) {
+        aimDirection = direction.normalized();
+    }
+}
+
+void Car::setHealth(float hp) {
+    health = std::clamp(hp, 0.0f, maxHealth);
+}
+
+void Car::setMaxHealth(float maxHp) {
+    maxHealth = std::max(1.0f, maxHp);
+    if (health > maxHealth) {
+        health = maxHealth;
+    }
+}
+
+void Car::setInvulnerable(bool invulnerable, float duration) {
+    isInvulnerable = invulnerable;
+    if (invulnerable && duration > 0.0f) {
+        invulnerabilityTimer = duration;
+    }
+}
+
+void Car::takeDamage(float damage) {
+    if (isInvulnerable || health <= 0.0f) return;
+    
+    health -= damage;
+    health = std::max(0.0f, health);
+    
+    // Brief invulnerability after taking damage
+    setInvulnerable(true, 0.5f);
+}
+
+void Car::heal(float amount) {
+    if (health <= 0.0f) return; // Can't heal if dead
+    
+    health += amount;
+    health = std::min(health, maxHealth);
+}
+
+void Car::kill() {
+    health = 0.0f;
+    velocity = Vector3::zero();
+    angularVelocity = Vector3::zero();
+}
+
+void Car::respawn() {
+    health = maxHealth;
+    velocity = Vector3::zero();
+    angularVelocity = Vector3::zero();
+    throttleInput = 0.0f;
+    brakeInput = 0.0f;
+    steerInput = 0.0f;
+    handbrakeInput = false;
+    currentBoost = boostCapacity;
+    isBoosting = false;
+    boostCooldown = 0.0f;
+    isInvulnerable = true;
+    invulnerabilityTimer = 3.0f; // 3 seconds of spawn protection
+    
+    for (int i = 0; i < 4; i++) {
+        wheels[i].velocity = Vector3::zero();
+        wheels[i].angularVelocity = 0.0f;
+        wheels[i].isGrounded = false;
+    }
+}
+
+void Car::respawn(const Vector3& position) {
+    respawn();
+    setPosition(position);
+}
+
+Vector3 Car::getProjectileSpawnPosition() const {
+    // Spawn projectiles slightly in front and above the car
+    Vector3 forward = getForward();
+    Vector3 right = getRight();
+    Vector3 up = getUp();
+    
+    return position + forward * 2.5f + up * 1.2f + right * 0.3f;
 }
 
 void Car::debugDraw() const {
