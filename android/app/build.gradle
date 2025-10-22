@@ -1,0 +1,72 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 33
+    buildToolsVersion "33.0.0"
+    
+    defaultConfig {
+        applicationId "com.racinggame3d.mobile"
+        minSdkVersion 21
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0"
+        
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17 -frtti -fexceptions"
+                arguments "-DANDROID=1"
+            }
+        }
+        
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+    }
+    
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            externalNativeBuild {
+                cmake {
+                    cppFlags "-O3"
+                }
+            }
+        }
+        debug {
+            debuggable true
+            jniDebuggable true
+            
+            externalNativeBuild {
+                cmake {
+                    cppFlags "-O0 -g"
+                }
+            }
+        }
+    }
+    
+    externalNativeBuild {
+        cmake {
+            path "../../CMakeLists.txt"
+            version "3.16.0"
+        }
+    }
+    
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.games:games-activity:1.2.2'
+    implementation 'com.google.android.material:material:1.9.0'
+}
