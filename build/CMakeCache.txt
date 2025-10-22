@@ -22,7 +22,7 @@ CMAKE_AR:FILEPATH=/usr/bin/ar
 
 //Choose the type of build, options are: None Debug Release RelWithDebInfo
 // MinSizeRel ...
-CMAKE_BUILD_TYPE:STRING=
+CMAKE_BUILD_TYPE:STRING=Release
 
 //Enable/Disable color output during build.
 CMAKE_COLOR_MAKEFILE:BOOL=ON
@@ -285,6 +285,9 @@ RacingGame3D_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 RacingGame3D_SOURCE_DIR:STATIC=/workspace
+
+//Build with SDL2 and OpenGL ES for mobile
+USE_SDL2_MOBILE:BOOL=OFF
 
 //The directory containing a CMake configuration file for glfw3.
 glfw3_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/glfw3

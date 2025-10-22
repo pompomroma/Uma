@@ -2,7 +2,12 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
+#ifdef PLATFORM_MOBILE
+#include <GLES3/gl3.h>
+#else
 #include <GL/glew.h>
+#endif
 
 Shader::Shader() : programID(0) {
 }
