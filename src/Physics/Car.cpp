@@ -1,6 +1,7 @@
 #include "Car.h"
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 Car::Car() 
     : position(0.0f, 0.0f, 0.0f)
@@ -13,6 +14,8 @@ Car::Car()
     , throttleInput(0.0f)
     , brakeInput(0.0f)
     , steerInput(0.0f)
+    , boostInput(false)
+    , handbrakeInput(false)
     , maxSteerAngle(30.0f)
     , maxSpeed(50.0f)
     , acceleration(20.0f)
@@ -30,6 +33,7 @@ Car::Car()
     , velocityDirection(0.0f, 0.0f, 0.0f)
     , speedEffectIntensity(0.0f)
     , isGrounded(false)
+    , onGround(false)
     , groundHeight(0.0f)
     , groundNormal(0.0f, 1.0f, 0.0f) {
     
@@ -139,6 +143,10 @@ void Car::setBoost(bool boost) {
     } else if (!boost) {
         deactivateBoost();
     }
+}
+
+void Car::setHandbrake(bool handbrake) {
+    handbrakeInput = handbrake;
 }
 
 void Car::update(float deltaTime) {
@@ -266,12 +274,14 @@ void Car::updateVisualEffects(float deltaTime) {
 
 void Car::checkGroundCollision() {
     isGrounded = false;
+    onGround = false;
     groundHeight = 0.0f;
     groundNormal = Vector3::up();
     
     // Simple ground plane collision
     if (position.y <= 0.0f) {
         isGrounded = true;
+        onGround = true;
         groundHeight = 0.0f;
         position.y = 0.0f;
         
@@ -363,6 +373,27 @@ void Car::resetToPosition(const Vector3& pos) {
 }
 
 void Car::debugDraw() const {
-    // This would be implemented with a debug rendering system
-    // For now, it's a placeholder
+    // Debug visualization would be implemented here
+    // This would typically render:
+    // - Car bounding box
+    // - Velocity vector
+    // - Acceleration vector
+    // - Wheel positions and forces
+    // - Suspension state
+    // - Steering angle indicator
+    
+    // For now, we'll just print debug info to console in debug builds
+    #ifdef DEBUG_BUILD
+    std::cout << "Car Debug Info:" << std::endl;
+    std::cout << "  Position: (" << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
+    std::cout << "  Velocity: (" << velocity.x << ", " << velocity.y << ", " << velocity.z << ")" << std::endl;
+    std::cout << "  Speed: " << getSpeed() << " / " << maxSpeed << std::endl;
+    std::cout << "  Throttle: " << throttleInput << std::endl;
+    std::cout << "  Brake: " << brakeInput << std::endl;
+    std::cout << "  Steer: " << steerInput << std::endl;
+    std::cout << "  Boost: " << (boostInput ? "ON" : "OFF") << std::endl;
+    std::cout << "  Handbrake: " << (handbrakeInput ? "ON" : "OFF") << std::endl;
+    std::cout << "  On Ground: " << (onGround ? "YES" : "NO") << std::endl;
+    std::cout << "  Mass: " << mass << " kg" << std::endl;
+    #endif
 }

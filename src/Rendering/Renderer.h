@@ -1,4 +1,5 @@
 #pragma once
+#include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Matrix4.h"
 #include "../Utils/Shader.h"
@@ -11,7 +12,7 @@ public:
         Vector3 position;
         Vector3 normal;
         Vector3 color;
-        Vector3 texCoord;
+        Vector2 texCoord;
     };
 
     struct Mesh {

@@ -1,7 +1,14 @@
 #include "Game.h"
+#include "Math/Vector2.h"
 #include <iostream>
 #include <chrono>
+#include <cmath>
+#include <algorithm>
 #include <GLFW/glfw3.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 Game::Game() 
     : currentState(GameState::Menu)
@@ -557,7 +564,7 @@ void Game::renderCars() {
     for (const auto& car : cars) {
         if (car) {
             Matrix4 transform = car->getTransformMatrix();
-            Vector3 color = (car == playerCar) ? Vector3(1.0f, 0.0f, 0.0f) : Vector3(0.0f, 0.0f, 1.0f);
+            Vector3 color = (car.get() == playerCar) ? Vector3(1.0f, 0.0f, 0.0f) : Vector3(0.0f, 0.0f, 1.0f);
             renderer->renderCar(transform, color);
         }
     }

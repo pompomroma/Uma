@@ -11,6 +11,13 @@ Matrix4::Matrix4(const Matrix4& other) {
     std::memcpy(m, other.m, sizeof(m));
 }
 
+Matrix4& Matrix4::operator=(const Matrix4& other) {
+    if (this != &other) {
+        std::memcpy(m, other.m, sizeof(m));
+    }
+    return *this;
+}
+
 Matrix4 Matrix4::operator*(const Matrix4& other) const {
     Matrix4 result;
     for (int i = 0; i < 4; i++) {

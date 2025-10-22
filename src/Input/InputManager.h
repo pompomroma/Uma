@@ -1,7 +1,9 @@
 #pragma once
+#include "../Math/Vector2.h"
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include <string>
 
 class InputManager {
 public:

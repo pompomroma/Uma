@@ -8,6 +8,9 @@ public:
     Matrix4();
     Matrix4(const Matrix4& other);
     
+    // Assignment operator
+    Matrix4& operator=(const Matrix4& other);
+    
     // Matrix operations
     Matrix4 operator*(const Matrix4& other) const;
     Vector3 operator*(const Vector3& v) const;

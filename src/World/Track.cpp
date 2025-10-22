@@ -1,6 +1,7 @@
 #include "Track.h"
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 Track::Track() 
     : trackLength(0.0f)
@@ -385,8 +386,29 @@ bool Track::isPositionOnTrack(const Vector3& position, float tolerance) const {
 }
 
 void Track::debugDraw() const {
-    // This would be implemented with a debug rendering system
-    // For now, it's a placeholder
+    // Debug visualization would be implemented here
+    // This would typically render:
+    // - Track centerline
+    // - Track boundaries
+    // - Checkpoint positions
+    // - Start/finish line
+    // - Track segments
+    // - Banking angles
+    
+    // For now, we'll just print debug info to console in debug builds
+    #ifdef DEBUG_BUILD
+    std::cout << "Track Debug Info:" << std::endl;
+    std::cout << "  Type: " << static_cast<int>(trackType) << std::endl;
+    std::cout << "  Radius: " << radius << std::endl;
+    std::cout << "  Width: " << width << std::endl;
+    std::cout << "  Resolution: " << resolution << std::endl;
+    std::cout << "  Banking: " << banking << std::endl;
+    std::cout << "  Vertices: " << vertices.size() << std::endl;
+    std::cout << "  Indices: " << indices.size() << std::endl;
+    std::cout << "  Checkpoints: " << checkpoints.size() << std::endl;
+    std::cout << "  Current Lap: " << currentLap << std::endl;
+    std::cout << "  Current Checkpoint: " << currentCheckpoint << std::endl;
+    #endif
 }
 
 void Track::calculateTrackProperties() {

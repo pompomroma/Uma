@@ -53,6 +53,8 @@ private:
     float throttleInput;
     float brakeInput;
     float steerInput;
+    bool boostInput;
+    bool handbrakeInput;
     
     // Physics constants
     float maxSteerAngle;
@@ -78,6 +80,7 @@ private:
     
     // State
     bool isGrounded;
+    bool onGround;
     float groundHeight;
     Vector3 groundNormal;
 
@@ -115,6 +118,7 @@ public:
     void setBrake(float brake);
     void setSteer(float steer);
     void setBoost(bool boost);
+    void setHandbrake(bool handbrake);
     
     // Physics update
     void update(float deltaTime);

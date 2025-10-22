@@ -27,7 +27,6 @@ private:
     
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
-    Car* playerCar;
     
     // Game state
     GameState currentState;
@@ -66,6 +65,9 @@ private:
     bool autoSteer;
     bool showHUD;
     bool showDebugInfo;
+    
+    // Player car (initialized last)
+    Car* playerCar;
 
 public:
     Game();
