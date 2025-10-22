@@ -1,0 +1,101 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+    namespace 'com.racinggame3d'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.racinggame3d.mobile"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // NDK configuration
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+        }
+        
+        // External native build configuration
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17 -frtti -fexceptions"
+                arguments "-DANDROID_STL=c++_shared",
+                         "-DANDROID_PLATFORM=android-21",
+                         "-DANDROID=1"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            // NDK optimization for release
+            ndk {
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
+        }
+        
+        debug {
+            debuggable true
+            jniDebuggable true
+            
+            // NDK debug configuration
+            ndk {
+                debugSymbolLevel 'FULL'
+            }
+        }
+    }
+    
+    // External native build
+    externalNativeBuild {
+        cmake {
+            path file('src/main/jni/CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    
+    // Asset packaging
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets', '../../assets']
+        }
+    }
+    
+    packagingOptions {
+        pickFirst '**/libc++_shared.so'
+        pickFirst '**/libjsc.so'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+    
+    // OpenGL ES support
+    implementation 'androidx.opengl:opengl:1.0.0'
+    
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
