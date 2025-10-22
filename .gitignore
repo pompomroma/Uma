@@ -1,0 +1,19 @@
+# Unreal Engine project ignores
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vscode/
+.vs/
+*.VC.db
+*.sln
+*.xcodeproj
+*.xcworkspace
+*.ipr
+*.iws
+*.iml
+.DS_Store
+ Thumbs.db
+# Build artifacts
+Build/*/Binaries/
+Build/*/Intermediate/
