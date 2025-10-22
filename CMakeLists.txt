@@ -38,6 +38,10 @@ set(SOURCES
     src/World/Track.h
     src/Utils/Shader.cpp
     src/Utils/Shader.h
+    src/Player/PlayerStats.cpp
+    src/Player/PlayerStats.h
+    src/Player/PvPMechanics.cpp
+    src/Player/PvPMechanics.h
 )
 
 # Create executable

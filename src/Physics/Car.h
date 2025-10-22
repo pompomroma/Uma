@@ -2,6 +2,8 @@
 #include "../Math/Vector3.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Quaternion.h"
+#include "../Player/PlayerStats.h"
+#include "../Player/PvPMechanics.h"
 
 class Car {
 public:
@@ -80,6 +82,11 @@ private:
     bool isGrounded;
     float groundHeight;
     Vector3 groundNormal;
+    
+    // PvP and Stats
+    PlayerStats playerStats;
+    bool isPlayer;
+    int playerId;
 
 public:
     Car();
@@ -140,6 +147,24 @@ public:
     Vector3 getWheelPosition(int wheelIndex) const;
     void reset();
     void resetToPosition(const Vector3& pos);
+    
+    // PvP Methods
+    void setAsPlayer(bool isPlayer, int playerId = 0);
+    bool getIsPlayer() const { return isPlayer; }
+    int getPlayerId() const { return playerId; }
+    PlayerStats& getPlayerStats() { return playerStats; }
+    const PlayerStats& getPlayerStats() const { return playerStats; }
+    
+    // Attack methods
+    bool performLaserAttack(const Vector3& direction);
+    bool performFistAttack(Car* target);
+    bool activateShield();
+    bool performTeleport(const Vector3& targetPosition);
+    
+    // Combat state
+    bool canAttack() const;
+    bool canUseAbility() const;
+    bool isAlive() const;
     
     // Debug
     void debugDraw() const;

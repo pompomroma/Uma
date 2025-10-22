@@ -217,6 +217,12 @@ void InputManager::setDefaultBindings() {
     bindKeyToAction(Key::MouseLeft, Action::CameraLook);
     bindKeyToAction(Key::Escape, Action::Pause);
     bindKeyToAction(Key::F1, Action::Reset);
+    
+    // PvP controls
+    bindKeyToAction(Key::MouseRight, Action::LaserAttack);
+    bindKeyToAction(Key::Ctrl, Action::FistAttack);
+    bindKeyToAction(Key::F2, Action::Shield);
+    bindKeyToAction(Key::F3, Action::Teleport);
 }
 
 void InputManager::setAccelerateCallback(std::function<void(float)> callback) {
@@ -253,6 +259,22 @@ void InputManager::setPauseCallback(std::function<void()> callback) {
 
 void InputManager::setResetCallback(std::function<void()> callback) {
     onReset = callback;
+}
+
+void InputManager::setLaserAttackCallback(std::function<void()> callback) {
+    onLaserAttack = callback;
+}
+
+void InputManager::setFistAttackCallback(std::function<void()> callback) {
+    onFistAttack = callback;
+}
+
+void InputManager::setShieldCallback(std::function<void()> callback) {
+    onShield = callback;
+}
+
+void InputManager::setTeleportCallback(std::function<void()> callback) {
+    onTeleport = callback;
 }
 
 void InputManager::setMouseLookActive(bool active) {
@@ -420,6 +442,20 @@ void InputManager::processActionCallbacks() {
     }
     if (onReset && isActionJustPressed(Action::Reset)) {
         onReset();
+    }
+    
+    // PvP action callbacks
+    if (onLaserAttack && isActionJustPressed(Action::LaserAttack)) {
+        onLaserAttack();
+    }
+    if (onFistAttack && isActionJustPressed(Action::FistAttack)) {
+        onFistAttack();
+    }
+    if (onShield && isActionJustPressed(Action::Shield)) {
+        onShield();
+    }
+    if (onTeleport && isActionJustPressed(Action::Teleport)) {
+        onTeleport();
     }
 }
 
