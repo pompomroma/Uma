@@ -21,6 +21,13 @@ int main() {
         std::cout << "  Shift - Handbrake" << std::endl;
         std::cout << "  ESC - Pause" << std::endl;
         std::cout << "  F1 - Reset" << std::endl;
+        std::cout << "PvP Controls:" << std::endl;
+        std::cout << "  Q - Laser" << std::endl;
+        std::cout << "  F - Punch" << std::endl;
+        std::cout << "  E - Hold Shield" << std::endl;
+        std::cout << "  R - Teleport forward" << std::endl;
+        std::cout << "Stats (spend points):" << std::endl;
+        std::cout << "  1 - Strength, 2 - Defense, 3 - Stamina, 4 - Agility" << std::endl;
         
         // Run game
         game.run();

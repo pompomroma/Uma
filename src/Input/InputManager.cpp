@@ -217,6 +217,18 @@ void InputManager::setDefaultBindings() {
     bindKeyToAction(Key::MouseLeft, Action::CameraLook);
     bindKeyToAction(Key::Escape, Action::Pause);
     bindKeyToAction(Key::F1, Action::Reset);
+
+    // PvP combat controls
+    bindKeyToAction(Key::Q, Action::Laser);      // Laser from hand
+    bindKeyToAction(Key::F, Action::Punch);      // Fist punch
+    bindKeyToAction(Key::E, Action::Shield);     // Hold to shield
+    bindKeyToAction(Key::R, Action::Teleport);   // Teleport forward
+
+    // Stat allocation (press while playing to spend points)
+    bindKeyToAction(Key::Digit1, Action::IncreaseStrength);
+    bindKeyToAction(Key::Digit2, Action::IncreaseDefense);
+    bindKeyToAction(Key::Digit3, Action::IncreaseStamina);
+    bindKeyToAction(Key::Digit4, Action::IncreaseAgility);
 }
 
 void InputManager::setAccelerateCallback(std::function<void(float)> callback) {

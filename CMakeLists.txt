@@ -24,6 +24,7 @@ set(SOURCES
     src/Math/Matrix4.h
     src/Math/Quaternion.cpp
     src/Math/Quaternion.h
+    src/Math/Vector2.h
     src/Camera/Camera.cpp
     src/Camera/Camera.h
     src/Physics/Car.cpp
@@ -38,6 +39,10 @@ set(SOURCES
     src/World/Track.h
     src/Utils/Shader.cpp
     src/Utils/Shader.h
+    src/Combat/CombatSystem.cpp
+    src/Combat/CombatSystem.h
+    src/Combat/Combatant.cpp
+    src/Combat/Combatant.h
 )
 
 # Create executable
