@@ -1,4 +1,5 @@
 #include "PhysicsEngine.h"
+#include <algorithm>
 
 PhysicsEngine::PhysicsEngine() 
     : gravity(0.0f, -9.81f, 0.0f)
@@ -40,7 +41,7 @@ void PhysicsEngine::setAirDensity(float density) {
 }
 
 void PhysicsEngine::setGroundFriction(float friction) {
-    groundFriction = std::clamp(friction, 0.0f, 1.0f);
+    groundFriction = (friction < 0.0f ? 0.0f : (friction > 1.0f ? 1.0f : friction));
 }
 
 void PhysicsEngine::setGroundHeight(float height) {
@@ -142,7 +143,7 @@ void PhysicsEngine::updateGroundCollision(Car* car) {
         
         // Apply ground friction
         Vector3 horizontalVelocity = Vector3(velocity.x, 0.0f, velocity.z);
-        Vector3 frictionForce = -horizontalVelocity * groundFriction;
+        Vector3 frictionForce = horizontalVelocity * -groundFriction;
         velocity += frictionForce * 0.016f; // Assuming 60 FPS
         
         car->setVelocity(velocity);

@@ -100,4 +100,7 @@ public:
     void resetThirdPerson();
     Vector3 screenToWorld(const Vector3& screenPos, float screenWidth, float screenHeight) const;
     Vector3 worldToScreen(const Vector3& worldPos, float screenWidth, float screenHeight) const;
+    
+private:
+    void updateVectors();
 };

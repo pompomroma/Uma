@@ -2,6 +2,8 @@
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include <string>
+#include "../Math/Vector2.h"
 
 class InputManager {
 public:

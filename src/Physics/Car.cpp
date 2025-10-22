@@ -171,8 +171,8 @@ void Car::updatePhysics(float deltaTime) {
     }
     
     // Apply damping
-    velocity *= 0.99f;
-    angularVelocity *= 0.95f;
+    velocity = velocity * 0.99f;
+    angularVelocity = angularVelocity * 0.95f;
 }
 
 void Car::updateWheels(float deltaTime) {
@@ -199,7 +199,7 @@ void Car::updateWheels(float deltaTime) {
             wheel.rotation += wheel.angularVelocity * deltaTime;
             
             // Apply friction
-            Vector3 frictionForce = -velocity * friction;
+            Vector3 frictionForce = velocity * -friction;
             velocity += frictionForce * deltaTime;
         }
     }
@@ -292,7 +292,7 @@ void Car::applyGroundForces() {
 void Car::applyAirResistance() {
     float speed = getSpeed();
     if (speed > 0.1f) {
-        Vector3 airResistanceForce = -velocity.normalized() * speed * speed * airResistance;
+        Vector3 airResistanceForce = velocity.normalized() * (-speed * speed * airResistance);
         velocity += airResistanceForce * 0.016f / mass;
     }
 }

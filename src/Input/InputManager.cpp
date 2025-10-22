@@ -1,6 +1,7 @@
 #include "InputManager.h"
 #include <algorithm>
 #include <cstring>
+#include <string>
 
 InputManager::InputManager() 
     : isMouseLookActive(false)

@@ -32,7 +32,11 @@ Game::Game()
     , autoSteer(false)
     , showHUD(true)
     , showDebugInfo(false)
-    , playerCar(nullptr) {
+    , playerCar(nullptr)
+    , window(nullptr) {
+    #ifdef DEBUG_BUILD
+    showDebugInfo = true;
+    #endif
 }
 
 Game::~Game() {
@@ -53,10 +57,10 @@ bool Game::initialize(int width, int height, const std::string& title) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     
     // Create window
-    GLFWwindow* window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+    window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -64,6 +68,8 @@ bool Game::initialize(int width, int height, const std::string& title) {
     }
     
     glfwMakeContextCurrent(window);
+    // VSync
+    glfwSwapInterval(vsync ? 1 : 0);
     
     // Initialize renderer
     renderer = std::make_unique<Renderer>();
@@ -89,6 +95,11 @@ bool Game::initialize(int width, int height, const std::string& title) {
 void Game::shutdown() {
     isRunning = false;
     
+    if (window) {
+        glfwDestroyWindow(window);
+        window = nullptr;
+    }
+    
     if (renderer) {
         renderer->shutdown();
         renderer.reset();
@@ -111,7 +122,7 @@ void Game::shutdown() {
 void Game::run() {
     auto lastTime = std::chrono::high_resolution_clock::now();
     
-    while (isRunning) {
+    while (isRunning && window && !glfwWindowShouldClose(window)) {
         auto currentTime = std::chrono::high_resolution_clock::now();
         deltaTime = std::chrono::duration<float>(currentTime - lastTime).count();
         lastTime = currentTime;
@@ -119,6 +130,9 @@ void Game::run() {
         // Cap delta time to prevent large jumps
         deltaTime = std::min(deltaTime, 0.016f);
         
+        // Poll OS events
+        glfwPollEvents();
+
         update(deltaTime);
         render();
         
@@ -130,6 +144,9 @@ void Game::run() {
             frameCount = 0;
             lastFpsUpdate = 0.0f;
         }
+
+        // Present
+        glfwSwapBuffers(window);
     }
 }
 
@@ -191,7 +208,10 @@ void Game::handleInput() {
         playerCar->setBrake(inputManager->getBrakeInput());
         playerCar->setSteer(inputManager->getSteerInput());
         playerCar->setBoost(inputManager->getBoostInput());
-        playerCar->setHandbrake(inputManager->getHandbrakeInput());
+        // Handbrake not implemented on Car; can be handled via increased brake if needed
+        if (inputManager->getHandbrakeInput()) {
+            playerCar->setBrake(1.0f);
+        }
     }
     
     // Handle camera input
@@ -433,15 +453,15 @@ void Game::setVSync(bool vsync) {
 }
 
 void Game::setMasterVolume(float volume) {
-    masterVolume = std::clamp(volume, 0.0f, 1.0f);
+    masterVolume = (volume < 0.0f ? 0.0f : (volume > 1.0f ? 1.0f : volume));
 }
 
 void Game::setSFXVolume(float volume) {
-    sfxVolume = std::clamp(volume, 0.0f, 1.0f);
+    sfxVolume = (volume < 0.0f ? 0.0f : (volume > 1.0f ? 1.0f : volume));
 }
 
 void Game::setMusicVolume(float volume) {
-    musicVolume = std::clamp(volume, 0.0f, 1.0f);
+    musicVolume = (volume < 0.0f ? 0.0f : (volume > 1.0f ? 1.0f : volume));
 }
 
 void Game::setCameraSensitivity(float sensitivity) {
@@ -456,7 +476,7 @@ void Game::setCameraInverted(bool inverted) {
 }
 
 void Game::setDifficulty(float difficulty) {
-    this->difficulty = std::clamp(difficulty, 0.1f, 2.0f);
+    this->difficulty = (difficulty < 0.1f ? 0.1f : (difficulty > 2.0f ? 2.0f : difficulty));
 }
 
 void Game::setAutoBrake(bool enabled) {
@@ -554,7 +574,8 @@ void Game::updateUI(float dt) {
 void Game::renderCars() {
     if (!renderer) return;
     
-    for (const auto& car : cars) {
+    for (const auto& carPtr : cars) {
+        const Car* car = carPtr.get();
         if (car) {
             Matrix4 transform = car->getTransformMatrix();
             Vector3 color = (car == playerCar) ? Vector3(1.0f, 0.0f, 0.0f) : Vector3(0.0f, 0.0f, 1.0f);

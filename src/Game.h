@@ -7,6 +7,7 @@
 #include "World/Track.h"
 #include <memory>
 #include <vector>
+#include <GLFW/glfw3.h>
 
 class Game {
 public:
@@ -24,6 +25,7 @@ private:
     std::unique_ptr<PhysicsEngine> physicsEngine;
     std::unique_ptr<Camera> camera;
     std::unique_ptr<Track> track;
+    GLFWwindow* window;
     
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
