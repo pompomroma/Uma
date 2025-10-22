@@ -71,12 +71,23 @@ src/
 - GLEW
 
 ### Build Steps
+
+#### Quick Build (Debug Mode - Default)
 ```bash
 # Install dependencies (Ubuntu/Debian)
 ./install_dependencies.sh
 
-# Build the project
+# Build the project in Debug mode (with debug symbols)
 ./build.sh
+
+# Run the game
+./build/RacingGame3D
+```
+
+#### Release Build (Optimized)
+```bash
+# Build in Release mode (optimized, no debug symbols)
+./build.sh release
 
 # Run the game
 ./build/RacingGame3D
@@ -86,6 +97,12 @@ src/
 ```bash
 mkdir build
 cd build
+
+# For Debug build (recommended for development)
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+make -j$(nproc)
+
+# For Release build (optimized for performance)
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 ```
@@ -170,6 +187,119 @@ void InputManager::addGamepadSupport() {
 
 ## Debugging
 
+### Quick Start Debugging
+
+The project now includes a convenient debug helper script:
+
+```bash
+# Build and debug with GDB (default)
+./debug.sh
+
+# Build and debug with LLDB
+./debug.sh lldb
+
+# Build and run with Valgrind (memory leak detection)
+./debug.sh valgrind
+
+# Just build in debug mode
+./debug.sh build
+```
+
+### Build Configuration
+
+The build system supports two modes:
+
+1. **Debug Mode** (Default)
+   - Debug symbols enabled (`-g`)
+   - No optimizations (`-O0`)
+   - Assertions enabled
+   - Perfect for development and debugging
+
+2. **Release Mode**
+   - Full optimizations (`-O3`)
+   - No debug symbols
+   - Best performance for production
+
+```bash
+# Build in Debug mode
+./build.sh debug
+
+# Build in Release mode  
+./build.sh release
+```
+
+### Using GDB (GNU Debugger)
+
+```bash
+# Build with debug symbols
+./build.sh debug
+
+# Start GDB
+cd build
+gdb ./RacingGame3D
+
+# Common GDB commands:
+# (gdb) break main              - Set breakpoint at main
+# (gdb) break Game.cpp:42       - Set breakpoint at line 42
+# (gdb) run                     - Start program
+# (gdb) continue                - Continue execution
+# (gdb) next                    - Step over (execute next line)
+# (gdb) step                    - Step into (enter function)
+# (gdb) print variableName      - Print variable value
+# (gdb) backtrace               - Show call stack
+# (gdb) quit                    - Exit GDB
+```
+
+### Using LLDB (LLVM Debugger)
+
+```bash
+# Build with debug symbols
+./build.sh debug
+
+# Start LLDB
+cd build
+lldb ./RacingGame3D
+
+# Common LLDB commands:
+# (lldb) breakpoint set -n main        - Set breakpoint at main
+# (lldb) breakpoint set -f Game.cpp -l 42  - Set breakpoint at line
+# (lldb) run                           - Start program
+# (lldb) continue                      - Continue execution
+# (lldb) next                          - Step over
+# (lldb) step                          - Step into
+# (lldb) print variableName            - Print variable value
+# (lldb) bt                            - Show call stack
+# (lldb) quit                          - Exit LLDB
+```
+
+### Memory Debugging with Valgrind
+
+Detect memory leaks and invalid memory access:
+
+```bash
+# Run with valgrind
+./debug.sh valgrind
+
+# Or manually:
+cd build
+valgrind --leak-check=full --show-leak-kinds=all ./RacingGame3D
+```
+
+### Address Sanitizer (Optional)
+
+For advanced memory error detection:
+
+```bash
+# Build with Address Sanitizer enabled
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON
+make -j$(nproc)
+
+# Run normally - ASAN will detect memory errors automatically
+./RacingGame3D
+```
+
 ### 1. Debug Rendering
 ```cpp
 // Enable debug info
@@ -191,6 +321,20 @@ physicsEngine->setDebugDraw(true);
 float fps = game.getFPS();
 int drawCalls = renderer->getDrawCalls();
 int triangles = renderer->getTrianglesRendered();
+```
+
+### 4. Debug Macros
+
+The build system automatically defines debug macros:
+
+```cpp
+#ifdef DEBUG_BUILD
+    std::cout << "Debug: Car position = " << car.getPosition() << std::endl;
+#endif
+
+#ifdef RELEASE_BUILD
+    // Release-only code
+#endif
 ```
 
 ## Testing
