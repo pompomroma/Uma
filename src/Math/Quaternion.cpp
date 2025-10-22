@@ -24,6 +24,17 @@ Quaternion Quaternion::operator*(float scalar) const {
     return Quaternion(x * scalar, y * scalar, z * scalar, w * scalar);
 }
 
+Vector3 Quaternion::operator*(const Vector3& v) const {
+    // Convert vector to quaternion (0, v.x, v.y, v.z)
+    Quaternion vecQuat(v.x, v.y, v.z, 0.0f);
+    
+    // Perform rotation: q * v * q^-1
+    Quaternion result = *this * vecQuat * inverse();
+    
+    // Extract the vector part
+    return Vector3(result.x, result.y, result.z);
+}
+
 Quaternion& Quaternion::operator*=(const Quaternion& other) {
     *this = *this * other;
     return *this;
@@ -65,7 +76,7 @@ Quaternion Quaternion::inverse() const {
     return identity();
 }
 
-Matrix4 Quaternion::toMatrix() const {
+Matrix4 Quaternion::toMatrix4() const {
     float xx = x * x;
     float yy = y * y;
     float zz = z * z;

@@ -38,6 +38,14 @@ set(SOURCES
     src/World/Track.h
     src/Utils/Shader.cpp
     src/Utils/Shader.h
+    src/Combat/Player.cpp
+    src/Combat/Player.h
+    src/Combat/Projectile.cpp
+    src/Combat/Projectile.h
+    src/Combat/Shield.cpp
+    src/Combat/Shield.h
+    src/Combat/CombatManager.cpp
+    src/Combat/CombatManager.h
 )
 
 # Create executable

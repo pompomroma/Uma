@@ -12,6 +12,7 @@ public:
     // Basic operations
     Vector3 operator+(const Vector3& other) const;
     Vector3 operator-(const Vector3& other) const;
+    Vector3 operator-() const;  // Unary negation
     Vector3 operator*(float scalar) const;
     Vector3 operator/(float scalar) const;
     Vector3& operator+=(const Vector3& other);
@@ -24,6 +25,7 @@ public:
     Vector3 cross(const Vector3& other) const;
     float length() const;
     float lengthSquared() const;
+    float magnitude() const { return length(); }  // Alias for length
     Vector3 normalized() const;
     void normalize();
 

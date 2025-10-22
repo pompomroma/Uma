@@ -141,6 +141,13 @@ void Car::setBoost(bool boost) {
     }
 }
 
+void Car::setHandbrake(bool handbrake) {
+    // Apply handbrake by increasing brake force
+    if (handbrake) {
+        brakeInput = 1.0f;
+    }
+}
+
 void Car::update(float deltaTime) {
     updatePhysics(deltaTime);
     updateWheels(deltaTime);
@@ -325,7 +332,7 @@ void Car::rechargeBoost(float deltaTime) {
 
 Matrix4 Car::getTransformMatrix() const {
     Matrix4 translation = Matrix4::translation(position);
-    Matrix4 rotationMatrix = rotation.toMatrix();
+    Matrix4 rotationMatrix = rotation.toMatrix4();
     return translation * rotationMatrix;
 }
 
