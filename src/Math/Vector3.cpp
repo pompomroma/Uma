@@ -100,3 +100,6 @@ Vector3 Vector3::lerp(const Vector3& a, const Vector3& b, float t) {
     t = std::clamp(t, 0.0f, 1.0f);
     return a + (b - a) * t;
 }
+Vector3 Vector3::operator-() const {
+    return Vector3(-x, -y, -z);
+}

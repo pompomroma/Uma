@@ -366,3 +366,8 @@ void Car::debugDraw() const {
     // This would be implemented with a debug rendering system
     // For now, it's a placeholder
 }
+void Car::setHandbrake(bool handbrake) {
+    // For now, just store the handbrake state
+    // In a full implementation, this would affect braking behavior
+    // This is a placeholder implementation
+}

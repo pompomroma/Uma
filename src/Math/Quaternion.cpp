@@ -223,3 +223,12 @@ Quaternion Quaternion::slerp(const Quaternion& a, const Quaternion& b, float t) 
     
     return (a * s0 + b * s1).normalized();
 }
+Vector3 Quaternion::operator*(const Vector3& v) const {
+    // Convert vector to quaternion (w = 0)
+    Quaternion vQuat(v.x, v.y, v.z, 0.0f);
+    
+    // q * v * q^-1
+    Quaternion result = (*this) * vQuat * inverse();
+    
+    return Vector3(result.x, result.y, result.z);
+}

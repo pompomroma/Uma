@@ -1,4 +1,5 @@
 #pragma once
+#include "Matrix4.h"
 #include "Vector3.h"
 
 class Quaternion {
@@ -14,6 +15,7 @@ public:
     Quaternion operator-(const Quaternion& other) const;
     Quaternion operator*(const Quaternion& other) const;
     Quaternion operator*(float scalar) const;
+    Vector3 operator*(const Vector3& v) const;
     Quaternion& operator*=(const Quaternion& other);
 
     // Utility functions
