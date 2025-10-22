@@ -1,5 +1,5 @@
 #include "Renderer.h"
-#include <glad/glad.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
@@ -35,9 +35,11 @@ bool Renderer::initialize(int width, int height) {
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
     
-    // Initialize OpenGL
-    if (!gladLoadGL()) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
+    // Initialize OpenGL via GLEW
+    glewExperimental = GL_TRUE;
+    GLenum glewErr = glewInit();
+    if (glewErr != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(glewErr) << std::endl;
         return false;
     }
     
@@ -280,16 +282,16 @@ Renderer::Mesh Renderer::createCubeMesh(float size) {
     // Define cube vertices
     std::vector<Vertex> vertices = {
         // Front face
-        {{-halfSize, -halfSize,  halfSize}, {0, 0, 1}, {1, 0, 0}, {0, 0}},
-        {{ halfSize, -halfSize,  halfSize}, {0, 0, 1}, {0, 1, 0}, {1, 0}},
-        {{ halfSize,  halfSize,  halfSize}, {0, 0, 1}, {0, 0, 1}, {1, 1}},
-        {{-halfSize,  halfSize,  halfSize}, {0, 0, 1}, {1, 1, 0}, {0, 1}},
+        {{-halfSize, -halfSize,  halfSize}, {0, 0, 1}, {1, 0, 0}, {0, 0, 0}},
+        {{ halfSize, -halfSize,  halfSize}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}},
+        {{ halfSize,  halfSize,  halfSize}, {0, 0, 1}, {0, 0, 1}, {1, 1, 0}},
+        {{-halfSize,  halfSize,  halfSize}, {0, 0, 1}, {1, 1, 0}, {0, 1, 0}},
         
         // Back face
-        {{-halfSize, -halfSize, -halfSize}, {0, 0, -1}, {1, 0, 1}, {0, 0}},
-        {{ halfSize, -halfSize, -halfSize}, {0, 0, -1}, {0, 1, 1}, {1, 0}},
-        {{ halfSize,  halfSize, -halfSize}, {0, 0, -1}, {1, 1, 1}, {1, 1}},
-        {{-halfSize,  halfSize, -halfSize}, {0, 0, -1}, {0, 0, 0}, {0, 1}},
+        {{-halfSize, -halfSize, -halfSize}, {0, 0, -1}, {1, 0, 1}, {0, 0, 0}},
+        {{ halfSize, -halfSize, -halfSize}, {0, 0, -1}, {0, 1, 1}, {1, 0, 0}},
+        {{ halfSize,  halfSize, -halfSize}, {0, 0, -1}, {1, 1, 1}, {1, 1, 0}},
+        {{-halfSize,  halfSize, -halfSize}, {0, 0, -1}, {0, 0, 0}, {0, 1, 0}},
     };
     
     // Define cube indices
@@ -359,10 +361,10 @@ Renderer::Mesh Renderer::createPlaneMesh(float width, float height) {
     float halfHeight = height * 0.5f;
     
     std::vector<Vertex> vertices = {
-        {{-halfWidth, 0, -halfHeight}, {0, 1, 0}, {1, 1, 1}, {0, 0}},
-        {{ halfWidth, 0, -halfHeight}, {0, 1, 0}, {1, 1, 1}, {1, 0}},
-        {{ halfWidth, 0,  halfHeight}, {0, 1, 0}, {1, 1, 1}, {1, 1}},
-        {{-halfWidth, 0,  halfHeight}, {0, 1, 0}, {1, 1, 1}, {0, 1}}
+        {{-halfWidth, 0, -halfHeight}, {0, 1, 0}, {1, 1, 1}, {0, 0, 0}},
+        {{ halfWidth, 0, -halfHeight}, {0, 1, 0}, {1, 1, 1}, {1, 0, 0}},
+        {{ halfWidth, 0,  halfHeight}, {0, 1, 0}, {1, 1, 1}, {1, 1, 0}},
+        {{-halfWidth, 0,  halfHeight}, {0, 1, 0}, {1, 1, 1}, {0, 1, 0}}
     };
     
     std::vector<unsigned int> indices = {

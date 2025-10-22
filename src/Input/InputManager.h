@@ -2,6 +2,15 @@
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include <string>
+
+// Simple 2D vector for look input
+struct Vector2 {
+    float x;
+    float y;
+    Vector2() : x(0.0f), y(0.0f) {}
+    Vector2(float x, float y) : x(x), y(y) {}
+};
 
 class InputManager {
 public:

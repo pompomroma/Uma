@@ -1,0 +1,74 @@
+[
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/main.cpp.o -c /workspace/src/main.cpp",
+  "file": "/workspace/src/main.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/main.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Game.cpp.o -c /workspace/src/Game.cpp",
+  "file": "/workspace/src/Game.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Game.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Math/Vector3.cpp.o -c /workspace/src/Math/Vector3.cpp",
+  "file": "/workspace/src/Math/Vector3.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Math/Vector3.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Math/Matrix4.cpp.o -c /workspace/src/Math/Matrix4.cpp",
+  "file": "/workspace/src/Math/Matrix4.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Math/Matrix4.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Math/Quaternion.cpp.o -c /workspace/src/Math/Quaternion.cpp",
+  "file": "/workspace/src/Math/Quaternion.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Math/Quaternion.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Camera/Camera.cpp.o -c /workspace/src/Camera/Camera.cpp",
+  "file": "/workspace/src/Camera/Camera.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Camera/Camera.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Physics/Car.cpp.o -c /workspace/src/Physics/Car.cpp",
+  "file": "/workspace/src/Physics/Car.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Physics/Car.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Physics/PhysicsEngine.cpp.o -c /workspace/src/Physics/PhysicsEngine.cpp",
+  "file": "/workspace/src/Physics/PhysicsEngine.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Physics/PhysicsEngine.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Rendering/Renderer.cpp.o -c /workspace/src/Rendering/Renderer.cpp",
+  "file": "/workspace/src/Rendering/Renderer.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Rendering/Renderer.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Input/InputManager.cpp.o -c /workspace/src/Input/InputManager.cpp",
+  "file": "/workspace/src/Input/InputManager.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Input/InputManager.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/World/Track.cpp.o -c /workspace/src/World/Track.cpp",
+  "file": "/workspace/src/World/Track.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/World/Track.cpp.o"
+},
+{
+  "directory": "/workspace/build",
+  "command": "/usr/bin/c++  -I/workspace/src -I/workspace/external -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic -O3 -DNDEBUG -o CMakeFiles/RacingGame3D.dir/src/Utils/Shader.cpp.o -c /workspace/src/Utils/Shader.cpp",
+  "file": "/workspace/src/Utils/Shader.cpp",
+  "output": "CMakeFiles/RacingGame3D.dir/src/Utils/Shader.cpp.o"
+}
+]

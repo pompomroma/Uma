@@ -199,7 +199,7 @@ void Car::updateWheels(float deltaTime) {
             wheel.rotation += wheel.angularVelocity * deltaTime;
             
             // Apply friction
-            Vector3 frictionForce = -velocity * friction;
+        Vector3 frictionForce = velocity * (-friction);
             velocity += frictionForce * deltaTime;
         }
     }
@@ -292,7 +292,7 @@ void Car::applyGroundForces() {
 void Car::applyAirResistance() {
     float speed = getSpeed();
     if (speed > 0.1f) {
-        Vector3 airResistanceForce = -velocity.normalized() * speed * speed * airResistance;
+        Vector3 airResistanceForce = velocity.normalized() * (-speed * speed * airResistance);
         velocity += airResistanceForce * 0.016f / mass;
     }
 }

@@ -29,6 +29,14 @@ Quaternion& Quaternion::operator*=(const Quaternion& other) {
     return *this;
 }
 
+Vector3 Quaternion::operator*(const Vector3& v) const {
+    // Rotate vector by quaternion: v' = q * (0,v) * q^{-1}
+    Quaternion qv(v.x, v.y, v.z, 0.0f);
+    Quaternion inv = inverse();
+    Quaternion res = (*this) * qv * inv;
+    return Vector3(res.x, res.y, res.z);
+}
+
 float Quaternion::length() const {
     return std::sqrt(x * x + y * y + z * z + w * w);
 }
