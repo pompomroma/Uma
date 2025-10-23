@@ -196,6 +196,7 @@ public:
     float getBestTime() const { return bestTime; }
     float getCurrentLapTime() const { return currentLapTime; }
     float getFPS() const { return fps; }
+    Renderer* getRenderer() const { return renderer.get(); }
     
     // Utility
     void resetGame();

@@ -47,6 +47,13 @@
         return;
     }
     
+    // Set Metal device for renderer
+    if (_game->getRenderer()) {
+        _game->getRenderer()->setMetalDevice(self.device);
+        _game->getRenderer()->setMetalCommandQueue(self.commandQueue);
+        _game->getRenderer()->createMetalPipeline();
+    }
+    
     _lastUpdateTime = CACurrentMediaTime();
     
     NSLog(@"Game initialized for iOS");
@@ -93,12 +100,18 @@
     // Cap delta time
     deltaTime = std::min(deltaTime, 0.033f);
     
-    // Update and render
+    // Update game logic
     _game->update(deltaTime);
-    _game->render();
+    
+    // Create command buffer
+    id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
+    
+    // Render with Metal
+    if (_game->getRenderer()) {
+        _game->getRenderer()->renderWithMetal(commandBuffer, view.currentDrawable.texture);
+    }
     
     // Present drawable
-    id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     [commandBuffer presentDrawable:view.currentDrawable];
     [commandBuffer commit];
 }
