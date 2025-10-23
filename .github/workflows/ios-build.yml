@@ -1,0 +1,177 @@
+name: iOS Build and Test
+
+on:
+  push:
+    branches: [ main, develop, cursor/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Install Dependencies
+      run: |
+        # Install CMake if not available
+        if ! command -v cmake &> /dev/null; then
+          brew install cmake
+        fi
+        
+        # Install Xcode command line tools
+        sudo xcode-select --install || true
+        
+        echo "CMake version: $(cmake --version)"
+        echo "Xcode version: $(xcodebuild -version)"
+    
+    - name: Validate iOS Setup
+      run: |
+        chmod +x test_ios_setup.sh
+        ./test_ios_setup.sh
+    
+    - name: Generate Xcode Project
+      run: |
+        chmod +x build_ios.sh
+        cd ios
+        
+        # Generate Xcode project
+        cmake -B build -G Xcode \
+          -DCMAKE_SYSTEM_NAME=iOS \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO \
+          -DCMAKE_IOS_INSTALL_COMBINED=YES
+        
+        echo "Xcode project generated successfully"
+    
+    - name: Build for iOS Simulator
+      run: |
+        cd ios
+        
+        # Build for iOS Simulator (doesn't require code signing)
+        xcodebuild -project build/RacingGame3DiOS.xcodeproj \
+          -scheme RacingGame3DiOS \
+          -configuration Release \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 14' \
+          clean build
+    
+    - name: Build for iOS Device (if secrets available)
+      if: ${{ secrets.IOS_CERTIFICATE_BASE64 && secrets.IOS_CERTIFICATE_PASSWORD }}
+      run: |
+        cd ios
+        
+        # Import certificate (would need to be set up in repository secrets)
+        echo "${{ secrets.IOS_CERTIFICATE_BASE64 }}" | base64 --decode > certificate.p12
+        security create-keychain -p "" build.keychain
+        security import certificate.p12 -k build.keychain -P "${{ secrets.IOS_CERTIFICATE_PASSWORD }}" -A
+        security list-keychains -s build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "" build.keychain
+        
+        # Build for iOS Device
+        xcodebuild -project build/RacingGame3DiOS.xcodeproj \
+          -scheme RacingGame3DiOS \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination 'generic/platform=iOS' \
+          clean build \
+          CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
+          DEVELOPMENT_TEAM="${{ secrets.IOS_DEVELOPMENT_TEAM }}"
+    
+    - name: Archive Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-artifacts
+        path: |
+          ios/build/Release-iphonesimulator/
+          ios/build/Release-iphoneos/
+        retention-days: 30
+    
+    - name: Upload Xcode Project
+      uses: actions/upload-artifact@v4
+      with:
+        name: xcode-project
+        path: ios/build/RacingGame3DiOS.xcodeproj/
+        retention-days: 7
+    
+    - name: Test Summary
+      run: |
+        echo "========================================="
+        echo "iOS Build Summary"
+        echo "========================================="
+        echo "✓ Xcode project generated successfully"
+        echo "✓ iOS Simulator build completed"
+        
+        if [ -d "ios/build/Release-iphoneos" ]; then
+          echo "✓ iOS Device build completed"
+        else
+          echo "⚠ iOS Device build skipped (no code signing)"
+        fi
+        
+        echo ""
+        echo "Artifacts uploaded:"
+        echo "- Xcode project (for manual building)"
+        echo "- Built app bundles (if successful)"
+        echo ""
+        echo "To deploy to device:"
+        echo "1. Download the Xcode project artifact"
+        echo "2. Open in Xcode on macOS"
+        echo "3. Configure code signing with your Apple Developer account"
+        echo "4. Build and run on your iOS device"
+        echo "========================================="
+
+  validate-mobile-features:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Validate Mobile Code
+      run: |
+        echo "Validating mobile-specific code..."
+        
+        # Check for required mobile files
+        required_files=(
+          "src/Input/TouchInputManager.h"
+          "src/Input/TouchInputManager.cpp"
+          "src/UI/MobileUI.h"
+          "src/UI/MobileUI.cpp"
+          "src/Rendering/RendererMetal.mm"
+          "src/Platform/PlatformDetect.h"
+        )
+        
+        for file in "${required_files[@]}"; do
+          if [ -f "$file" ]; then
+            echo "✓ $file exists"
+          else
+            echo "✗ $file missing"
+            exit 1
+          fi
+        done
+        
+        # Check for platform-specific code
+        if grep -r "PLATFORM_IOS" src/; then
+          echo "✓ iOS platform detection found"
+        else
+          echo "✗ iOS platform detection missing"
+          exit 1
+        fi
+        
+        if grep -r "GRAPHICS_METAL" src/; then
+          echo "✓ Metal graphics support found"
+        else
+          echo "✗ Metal graphics support missing"
+          exit 1
+        fi
+        
+        echo "✓ All mobile features validated"

@@ -1,8 +1,12 @@
 #include "Renderer.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "../Platform/PlatformDetect.h"
 #include <iostream>
 #include <cmath>
+
+#if GRAPHICS_OPENGL
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#endif
 
 Renderer::Renderer() 
     : screenWidth(1920)
@@ -35,13 +39,16 @@ bool Renderer::initialize(int width, int height) {
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
     
+#if GRAPHICS_OPENGL
     // Initialize OpenGL
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << std::endl;
         return false;
     }
+#endif
     
+#if GRAPHICS_OPENGL
     // Set OpenGL settings
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
@@ -51,6 +58,7 @@ bool Renderer::initialize(int width, int height) {
     
     // Load shaders
     loadShaders();
+#endif
     
     // Set up projection matrix
     projectionMatrix = Matrix4::perspective(fieldOfView * M_PI / 180.0f, aspectRatio, nearPlane, farPlane);
@@ -67,17 +75,21 @@ bool Renderer::initialize(int width, int height) {
 }
 
 void Renderer::shutdown() {
+#if GRAPHICS_OPENGL
     basicShader.reset();
     carShader.reset();
     trackShader.reset();
     skyboxShader.reset();
+#endif
     lights.clear();
 }
 
 void Renderer::beginFrame() {
     resetStats();
+#if GRAPHICS_OPENGL
     glClearColor(renderState.clearColor.x, renderState.clearColor.y, renderState.clearColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
 }
 
 void Renderer::endFrame() {
@@ -85,11 +97,15 @@ void Renderer::endFrame() {
 }
 
 void Renderer::clear() {
+#if GRAPHICS_OPENGL
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
 }
 
 void Renderer::setViewport(int x, int y, int width, int height) {
+#if GRAPHICS_OPENGL
     glViewport(x, y, width, height);
+#endif
     screenWidth = width;
     screenHeight = height;
     aspectRatio = (float)width / (float)height;

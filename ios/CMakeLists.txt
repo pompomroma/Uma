@@ -5,9 +5,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # iOS specific settings
+set(CMAKE_SYSTEM_NAME iOS)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum iOS deployment version")
 set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO")
 set(CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "13.0")
+set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "" CACHE STRING "Development Team ID")
+set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer")
+
+# Enable ARC (Automatic Reference Counting)
+set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES)
+
+# Set the iOS SDK
+set(CMAKE_OSX_SYSROOT iphoneos)
 
 # Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
@@ -23,6 +32,7 @@ set(SOURCES
     ../src/Physics/Car.cpp
     ../src/Physics/PhysicsEngine.cpp
     ../src/Rendering/Renderer.cpp
+    ../src/Rendering/RendererMetal.mm
     ../src/Input/InputManager.cpp
     ../src/Input/TouchInputManager.cpp
     ../src/World/Track.cpp
@@ -38,6 +48,11 @@ set(SOURCES
     GameViewController.mm
 )
 
+# Add resources
+set(RESOURCES
+    LaunchScreen.storyboard
+)
+
 # iOS framework dependencies
 find_library(UIKIT_LIBRARY UIKit)
 find_library(FOUNDATION_LIBRARY Foundation)
@@ -47,7 +62,7 @@ find_library(QUARTZCORE_LIBRARY QuartzCore)
 find_library(GAMECONTROLLER_LIBRARY GameController)
 
 # Create iOS app bundle
-add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
+add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${RESOURCES})
 
 # Set bundle properties
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -57,6 +72,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
     XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
+    XCODE_ATTRIBUTE_PROVISIONING_PROFILE_SPECIFIER ""
+    XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+    XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES "NO"
 )
 
 # Link frameworks
