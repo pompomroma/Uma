@@ -1,9 +1,15 @@
 #pragma once
+#include "../Platform/PlatformDetect.h"
 #include "../Math/Vector3.h"
 #include "../Math/Matrix4.h"
 #include "../Utils/Shader.h"
 #include <vector>
 #include <memory>
+
+#if PLATFORM_IOS
+#import <Metal/Metal.h>
+#import <MetalKit/MetalKit.h>
+#endif
 
 class Renderer {
 public:
@@ -21,7 +27,12 @@ public:
     struct Mesh {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
+#if GRAPHICS_OPENGL
         unsigned int VAO, VBO, EBO;
+#elif GRAPHICS_METAL
+        id<MTLBuffer> vertexBuffer;
+        id<MTLBuffer> indexBuffer;
+#endif
         bool isInitialized;
     };
 
@@ -41,10 +52,21 @@ public:
     };
 
 private:
+#if GRAPHICS_OPENGL
     std::unique_ptr<Shader> basicShader;
     std::unique_ptr<Shader> carShader;
     std::unique_ptr<Shader> trackShader;
     std::unique_ptr<Shader> skyboxShader;
+#elif GRAPHICS_METAL
+    id<MTLDevice> metalDevice;
+    id<MTLCommandQueue> metalCommandQueue;
+    id<MTLRenderPipelineState> basicPipelineState;
+    id<MTLRenderPipelineState> carPipelineState;
+    id<MTLRenderPipelineState> trackPipelineState;
+    id<MTLRenderPipelineState> skyboxPipelineState;
+    id<MTLDepthStencilState> depthStencilState;
+    MTKView* metalView;
+#endif
     
     std::vector<Light> lights;
     RenderState renderState;
@@ -115,8 +137,15 @@ public:
     void setLineWidth(float width);
     
     // Shaders
+#if GRAPHICS_OPENGL
     void loadShaders();
     void reloadShaders();
+#elif GRAPHICS_METAL
+    bool loadMetalShaders();
+    void setMetalDevice(id<MTLDevice> device);
+    void setMetalCommandQueue(id<MTLCommandQueue> commandQueue);
+    void setMetalView(MTKView* view);
+#endif
     Shader* getBasicShader() const { return basicShader.get(); }
     Shader* getCarShader() const { return carShader.get(); }
     Shader* getTrackShader() const { return trackShader.get(); }

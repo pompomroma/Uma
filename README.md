@@ -1,6 +1,32 @@
-# 3D Racing Game
+# Racing Game 3D
 
-A 3rd person 3D racing game built with C++ and OpenGL.
+A cross-platform 3D racing game with PvP combat, built with C++ and supporting both desktop (OpenGL) and mobile (Metal on iOS) platforms.
+
+## 🎮 Platforms Supported
+
+- **Desktop**: Windows, macOS, Linux (OpenGL)
+- **Mobile**: iOS (Metal rendering)
+- **Android**: Coming soon
+
+## 🎯 Game Features
+
+### Racing Mode
+- 3D racing with realistic physics
+- Multiple cars and tracks
+- Lap timing and best time tracking
+- AI opponents
+
+### PvP Combat Mode
+- Real-time multiplayer combat
+- Character progression system
+- Multiple abilities (attacks, shields, teleport)
+- Level-up stat distribution
+
+### Cross-Platform Features
+- **Desktop**: Keyboard + mouse controls
+- **Mobile**: Touch controls with virtual joystick
+- **Adaptive UI**: Responsive interface for all screen sizes
+- **Metal Rendering**: Native iOS graphics performance
 
 ## Dependencies
 
@@ -27,27 +53,83 @@ brew install glfw glew
 vcpkg install glfw3 glew
 ```
 
-## Building the Project
+## 🔨 Building the Project
+
+### Desktop Build
 
 ```bash
+# Install dependencies first (see above)
 mkdir build
 cd build
 cmake ..
 make
 ```
 
-## Running the Game
+### iOS Build
 
+**Requirements**: macOS with Xcode installed
+
+```bash
+# Make scripts executable
+chmod +x build_ios.sh deploy_ios.sh
+
+# Build for iOS
+./build_ios.sh
+
+# Deploy to device (opens Xcode)
+./deploy_ios.sh
+```
+
+For detailed iOS setup instructions, see [iOS_BUILD_GUIDE.md](iOS_BUILD_GUIDE.md).
+
+## 🚀 Running the Game
+
+### Desktop
 ```bash
 ./RacingGame3D
 ```
 
-## Controls
+### iOS
+1. Build using the iOS build script
+2. Open the generated Xcode project
+3. Configure code signing with your Apple Developer account
+4. Run on your iOS device
 
-- **WASD** - Car movement
+## 🎮 Controls
+
+### Desktop Controls
+
+#### Racing Mode
+- **WASD** - Car movement (accelerate/brake/steer)
 - **Mouse** - Camera look around
-- **Space** - Brake
-- **Shift** - Boost/Dash
+- **Space** - Brake/Reverse
+- **Shift** - Boost
+- **C** - Handbrake
+
+#### PvP Combat Mode
+- **WASD** - Character movement
+- **Mouse** - Look direction
+- **Q** - Fist attack
+- **E** - Laser attack
+- **F** - Shield toggle
+- **R** - Teleport
+- **Tab** - Stats menu
+
+### iOS Touch Controls
+
+#### Racing Mode
+- **Left side**: Virtual joystick for steering
+- **Right side**: Touch buttons for accelerate/brake/boost
+- **Two-finger drag**: Camera rotation
+
+#### PvP Combat Mode
+- **Left side**: Virtual joystick for movement
+- **Right side**: Action buttons (Q/E/F/R)
+- **Camera**: Automatic follow with touch override
+
+### Menu Navigation
+- **Desktop**: Mouse click, keyboard shortcuts
+- **iOS**: Touch gestures, tap to select
 
 ## Project Structure
 

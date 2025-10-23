@@ -3,6 +3,7 @@
 #import <MetalKit/MetalKit.h>
 #include "../src/Game.h"
 #include <memory>
+#include <iostream>
 
 @interface GameViewController : UIViewController <MTKViewDelegate>
 
@@ -20,36 +21,55 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    NSLog(@"GameViewController viewDidLoad started");
+    
     // Setup Metal
     self.device = MTLCreateSystemDefaultDevice();
     if (!self.device) {
         NSLog(@"Metal is not supported on this device");
+        [self showErrorAlert:@"Metal Not Supported" message:@"This device does not support Metal rendering."];
         return;
     }
+    
+    NSLog(@"Metal device created successfully: %@", self.device.name);
     
     self.mtkView = [[MTKView alloc] initWithFrame:self.view.bounds device:self.device];
     self.mtkView.delegate = self;
     self.mtkView.preferredFramesPerSecond = 60;
     self.mtkView.enableSetNeedsDisplay = NO;
     self.mtkView.multipleTouchEnabled = YES;
+    self.mtkView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    self.mtkView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     
     // Add Metal view
     [self.view addSubview:self.mtkView];
     
     // Create command queue
     self.commandQueue = [self.device newCommandQueue];
+    if (!self.commandQueue) {
+        NSLog(@"Failed to create Metal command queue");
+        [self showErrorAlert:@"Metal Error" message:@"Failed to create Metal command queue."];
+        return;
+    }
     
     // Initialize game
     _game = std::make_unique<Game>();
     CGSize size = self.view.bounds.size;
+    NSLog(@"Initializing game with size: %.0fx%.0f", size.width, size.height);
+    
     if (!_game->initialize((int)size.width, (int)size.height, "Racing Game 3D")) {
         NSLog(@"Failed to initialize game");
+        [self showErrorAlert:@"Game Error" message:@"Failed to initialize the game engine."];
         return;
     }
     
+    // Set up Metal for the renderer (if the game has a renderer)
+    // This would require adding a method to get the renderer from the game
+    // For now, we'll assume the game handles Metal setup internally
+    
     _lastUpdateTime = CACurrentMediaTime();
     
-    NSLog(@"Game initialized for iOS");
+    NSLog(@"Game initialized successfully for iOS");
 }
 
 - (void)viewWillLayoutSubviews {
@@ -156,10 +176,24 @@
 }
 
 - (void)dealloc {
+    NSLog(@"GameViewController dealloc");
     if (_game) {
         _game->shutdown();
         _game.reset();
     }
+}
+
+- (void)showErrorAlert:(NSString*)title message:(NSString*)message {
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction* okAction = [UIAlertAction actionWithTitle:@"OK"
+                                                       style:UIAlertActionStyleDefault
+                                                     handler:nil];
+    [alert addAction:okAction];
+    
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 @end
