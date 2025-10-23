@@ -175,6 +175,10 @@ void Renderer::renderCube(const Vector3& position, const Vector3& scale, const V
 }
 
 void Renderer::renderSphere(const Vector3& position, float radius, const Vector3& color) {
+    renderSphere(position, radius, color, 1.0f);
+}
+
+void Renderer::renderSphere(const Vector3& position, float radius, const Vector3& color, float opacity) {
     Matrix4 modelMatrix = Matrix4::translation(position) * Matrix4::scale(Vector3(radius, radius, radius));
     Mesh sphereMesh = createSphereMesh();
     renderMesh(sphereMesh, modelMatrix, color);
@@ -529,6 +533,31 @@ void Renderer::setupLighting(Shader* shader) {
         shader->setFloat(prefix + "intensity", lights[i].intensity);
         shader->setFloat(prefix + "attenuation", lights[i].attenuation);
     }
+}
+
+void Renderer::renderHealthBar(const Vector3& position, float percentage, float width, float height) {
+    // TODO: Implement health bar rendering
+    // This would render a health bar at the given position with the given dimensions
+}
+
+void Renderer::renderBar(float x, float y, float width, float height, float percentage, const Vector3& fillColor, const Vector3& bgColor) {
+    // TODO: Implement generic bar rendering (for health, stamina, etc.)
+    // This would render a bar UI element
+}
+
+void Renderer::renderQuad(const Vector3& position, float width, float height, const Vector3& color, float opacity) {
+    // TODO: Implement quad rendering for UI elements
+    // This would render a simple quad/rectangle
+}
+
+void Renderer::renderText(const std::string& text, float x, float y, float scale, const Vector3& color) {
+    // TODO: Implement text rendering
+    // This would require a text rendering library like FreeType
+}
+
+void Renderer::renderAbilityIcon(float x, float y, float width, float height, const std::string& key, bool isReady) {
+    // TODO: Implement ability icon rendering
+    // This would render ability icons with cooldown indicators
 }
 
 void Renderer::setupMatrices(Shader* shader, const Matrix4& modelMatrix) {

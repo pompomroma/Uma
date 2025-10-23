@@ -70,6 +70,9 @@ Player::Player(int id, const std::string& name, const Vector3& startPos)
     , velocity(Vector3::zero())
     , rotation(Quaternion::identity())
     , lookDirection(Vector3::forward())
+    , moveDirection(Vector3::zero())
+    , moveSpeed(10.0f)
+    , rotationSpeed(5.0f)
     , currentState(CombatState::Idle)
     , currentAttack(AttackType::None)
     , stateTimer(0.0f)
@@ -107,7 +110,7 @@ Player::~Player() {
 
 void Player::update(float deltaTime) {
     updateCombat(deltaTime);
-    updateMovement(deltaTime);
+    // Movement is now updated externally with camera info
     updateStats(deltaTime);
     updateProjectiles(deltaTime);
     updateBuffs(deltaTime);
@@ -164,7 +167,7 @@ void Player::updateCombat(float deltaTime) {
     }
 }
 
-void Player::updateMovement(float deltaTime) {
+void Player::updateMovement(float deltaTime, const Vector3& inputDirection, const Vector3& cameraForward, const Vector3& cameraRight) {
     if (currentState == CombatState::Teleporting) {
         // Smooth teleport animation
         teleportProgress += deltaTime * 3.0f;  // Teleport takes ~0.33 seconds
@@ -174,9 +177,34 @@ void Player::updateMovement(float deltaTime) {
         Vector3 startPos = position;
         position = startPos + (teleportTarget - startPos) * teleportProgress;
     } else if (currentState != CombatState::Stunned && currentState != CombatState::Dead) {
-        // Normal movement (modified by agility)
+        // Calculate movement direction relative to camera
+        Vector3 forward = cameraForward;
+        forward.y = 0;  // Keep movement on horizontal plane
+        forward = forward.normalized();
+        
+        Vector3 right = cameraRight;
+        right.y = 0;
+        right = right.normalized();
+        
+        // Apply input relative to camera
+        moveDirection = forward * inputDirection.y + right * inputDirection.x;
+        
+        if (moveDirection.length() > 0.01f) {
+            moveDirection = moveDirection.normalized();
+            
+            // Smooth rotation toward movement direction
+            lookDirection = lookDirection + (moveDirection - lookDirection) * rotationSpeed * deltaTime;
+            lookDirection = lookDirection.normalized();
+            
+            // Update rotation quaternion to face movement direction
+            float angle = std::atan2(lookDirection.x, lookDirection.z);
+            rotation = Quaternion::fromAxisAngle(Vector3::up(), angle);
+        }
+        
+        // Apply movement with speed modifier based on agility
         float speedModifier = 1.0f + (stats.agility * 0.02f);  // 2% speed per agility point
-        position = position + velocity * deltaTime * speedModifier;
+        velocity = moveDirection * moveSpeed * speedModifier;
+        position = position + velocity * deltaTime;
     }
 }
 

@@ -47,24 +47,30 @@ void MobileUI::render() {
     // For now, it's a placeholder that shows what should be rendered
     
     if (showVirtualControls) {
-        // Render left joystick
-        renderVirtualJoystick(touchManager->getLeftJoystickState());
-        
-        // Render right joystick
-        renderVirtualJoystick(touchManager->getRightJoystickState());
+        // Render dynamic joystick (only when active)
+        const auto& joystick = touchManager->getJoystickState();
+        if (joystick.fadeAlpha > 0.01f) {
+            renderVirtualJoystick(joystick);
+        }
         
         // Render buttons
         for (const auto& button : touchManager->getButtons()) {
             renderVirtualButton(button);
         }
+        
+        // Visual indicator for camera drag zone (subtle overlay)
+        // Could render a faint border or gradient on the right half
     }
 }
 
 void MobileUI::renderVirtualJoystick(const TouchInputManager::VirtualJoystick& joystick) {
     // This should be implemented in the actual renderer
-    // Draw outer circle
-    // Draw inner circle (knob)
-    // Draw direction indicator if active
+    // For dynamic joystick with fade effect:
+    // - Apply alpha based on joystick.fadeAlpha
+    // - Draw outer circle at joystick.centerPosition with joystick.outerRadius
+    // - Draw inner circle (knob) at joystick.currentPosition with joystick.innerRadius
+    // - Optional: Draw direction line from center to knob
+    // - Use semi-transparent colors for better visibility
 }
 
 void MobileUI::renderVirtualButton(const TouchInputManager::VirtualButton& button) {

@@ -249,6 +249,13 @@ void Game::handleInput() {
     
     inputManager->update(deltaTime);
     
+#if PLATFORM_MOBILE
+    // Update mobile touch input
+    if (touchInputManager) {
+        touchInputManager->update(deltaTime);
+    }
+#endif
+    
     // Handle menu input
     if (currentState == GameState::Menu) {
         if (inputManager->isKeyJustPressed(InputManager::Key::F1)) {
@@ -391,12 +398,31 @@ void Game::setCamera(std::unique_ptr<Camera> newCamera) {
 }
 
 void Game::updateCamera(float dt) {
-    if (!camera || !playerCar) return;
+    if (!camera) return;
     
-    if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
-        camera->updateThirdPerson(playerCar->getPosition(), playerCar->getForward());
-    } else {
-        camera->update(dt);
+    // Handle touch camera controls for mobile
+#if PLATFORM_MOBILE
+    if (touchInputManager && camera->getMode() == Camera::CameraMode::ThirdPerson) {
+        Vector2 cameraDrag = touchInputManager->getCameraDragDelta();
+        if (cameraDrag.magnitude() > 0.01f) {
+            camera->handleTouchDrag(cameraDrag.x, cameraDrag.y);
+        }
+    }
+#endif
+    
+    // Update camera based on target
+    if (currentState == GameState::PvPMode && localPlayer) {
+        if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
+            camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection(), dt);
+        } else {
+            camera->update(dt);
+        }
+    } else if (playerCar) {
+        if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
+            camera->updateThirdPerson(playerCar->getPosition(), playerCar->getForward(), dt);
+        } else {
+            camera->update(dt);
+        }
     }
     
     // Update renderer camera
@@ -788,13 +814,45 @@ void Game::initializePvPMode() {
 void Game::updatePvPMode(float dt) {
     if (!combatManager) return;
     
+    // Handle player movement with camera-relative controls
+    if (localPlayer && camera) {
+        Vector3 inputDirection(0, 0, 0);
+        
+#if PLATFORM_MOBILE
+        // Get joystick input for movement
+        if (touchInputManager) {
+            Vector2 joystickDir = touchInputManager->getJoystickDirection();
+            float joystickMag = touchInputManager->getJoystickMagnitude();
+            
+            if (joystickMag > 0.01f) {
+                // Convert joystick input to movement direction
+                // Note: Y is inverted because joystick Y goes down while forward is negative Z
+                inputDirection.x = joystickDir.x;
+                inputDirection.z = -joystickDir.y;  // Forward/backward
+                inputDirection = inputDirection.normalized() * joystickMag;
+            }
+        }
+#else
+        // Desktop keyboard input
+        if (inputManager) {
+            Vector2 moveInput = inputManager->getMoveInput();
+            inputDirection.x = moveInput.x;
+            inputDirection.z = moveInput.y;
+        }
+#endif
+        
+        // Update player movement with camera-relative controls
+        localPlayer->updateMovement(dt, inputDirection, 
+                                    camera->getForward(), camera->getRight());
+    }
+    
     // Update combat system
     combatManager->update(dt);
     
     // Update camera to follow local player
     if (camera && localPlayer) {
         camera->setFollowTarget(localPlayer->getPosition());
-        camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
+        camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection(), dt);
     }
     
     // Check for level ups

@@ -9,10 +9,15 @@ TouchInputManager::TouchInputManager()
     , joystickDeadzone(0.15f)
     , doubleTapTimeThreshold(0.3)
     , longPressTimeThreshold(0.5)
-    , swipeDistanceThreshold(50.0f) {
+    , swipeDistanceThreshold(50.0f)
+    , isCameraDragging(false)
+    , cameraDragTouchId(-1)
+    , cameraDragStartPos(0, 0)
+    , cameraDragCurrentPos(0, 0)
+    , cameraDragDelta(0, 0) {
     
-    leftJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f};
-    rightJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f};
+    // Initialize dynamic joystick (position will be set when touched)
+    leftJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f, true, 0.0f};
 }
 
 TouchInputManager::~TouchInputManager() {
@@ -23,24 +28,14 @@ void TouchInputManager::initialize(float width, float height) {
     screenWidth = width;
     screenHeight = height;
     
-    // Setup default virtual controls
-    // Left joystick for steering (bottom left)
-    setupLeftJoystick(Vector2(150.0f, height - 150.0f), 100.0f, 40.0f);
+    // Setup dynamic joystick (no fixed position)
+    setupDynamicJoystick(100.0f, 40.0f);
     
-    // Right joystick for camera (bottom right)
-    setupRightJoystick(Vector2(width - 150.0f, height - 150.0f), 80.0f, 30.0f);
-    
-    // Action buttons (right side)
-    addButton("accelerate", Vector2(width - 100.0f, height - 400.0f), 60.0f);
-    addButton("brake", Vector2(width - 100.0f, height - 280.0f), 60.0f);
-    addButton("boost", Vector2(width - 220.0f, height - 340.0f), 50.0f);
-    addButton("handbrake", Vector2(width - 340.0f, height - 340.0f), 50.0f);
-    
-    // Combat buttons (if needed)
-    addButton("attack1", Vector2(width - 100.0f, 200.0f), 50.0f);
-    addButton("attack2", Vector2(width - 220.0f, 200.0f), 50.0f);
-    addButton("shield", Vector2(width - 100.0f, 320.0f), 50.0f);
-    addButton("teleport", Vector2(width - 220.0f, 320.0f), 50.0f);
+    // Combat buttons (bottom right corner for easy access)
+    addButton("attack1", Vector2(width - 100.0f, height - 200.0f), 50.0f);
+    addButton("attack2", Vector2(width - 220.0f, height - 200.0f), 50.0f);
+    addButton("shield", Vector2(width - 100.0f, height - 320.0f), 50.0f);
+    addButton("teleport", Vector2(width - 220.0f, height - 320.0f), 50.0f);
     
     // Menu buttons (top)
     addButton("pause", Vector2(width - 70.0f, 70.0f), 40.0f);
@@ -56,6 +51,14 @@ void TouchInputManager::shutdown() {
 void TouchInputManager::update(float deltaTime) {
     updateVirtualControls();
     detectGestures();
+    
+    // Fade out joystick when not in use
+    if (!leftJoystick.isActive && leftJoystick.fadeAlpha > 0.0f) {
+        leftJoystick.fadeAlpha -= deltaTime * 2.0f;
+        if (leftJoystick.fadeAlpha < 0.0f) {
+            leftJoystick.fadeAlpha = 0.0f;
+        }
+    }
 }
 
 void TouchInputManager::registerTouch(int touchId, float x, float y, TouchPhase phase, float pressure) {
@@ -75,8 +78,7 @@ void TouchInputManager::registerTouch(int touchId, float x, float y, TouchPhase 
     }
     
     // Process for virtual controls
-    processTouchForJoystick(touch, leftJoystick);
-    processTouchForJoystick(touch, rightJoystick);
+    processTouchForControls(touch);
     processTouchForButtons(touch);
 }
 
@@ -105,7 +107,7 @@ void TouchInputManager::endTouch(int touchId) {
             onTouchEnded(touch);
         }
         
-        // Release joysticks
+        // Release joystick
         if (leftJoystick.touchId == touchId) {
             leftJoystick.isActive = false;
             leftJoystick.touchId = -1;
@@ -113,12 +115,12 @@ void TouchInputManager::endTouch(int touchId) {
             leftJoystick.direction = Vector2(0, 0);
             leftJoystick.magnitude = 0.0f;
         }
-        if (rightJoystick.touchId == touchId) {
-            rightJoystick.isActive = false;
-            rightJoystick.touchId = -1;
-            rightJoystick.currentPosition = rightJoystick.centerPosition;
-            rightJoystick.direction = Vector2(0, 0);
-            rightJoystick.magnitude = 0.0f;
+        
+        // Release camera drag
+        if (cameraDragTouchId == touchId) {
+            isCameraDragging = false;
+            cameraDragTouchId = -1;
+            cameraDragDelta = Vector2(0, 0);
         }
         
         // Release buttons
@@ -162,26 +164,15 @@ int TouchInputManager::getTouchCount() const {
     return static_cast<int>(activeTouches.size());
 }
 
-void TouchInputManager::setupLeftJoystick(Vector2 center, float outerRadius, float innerRadius) {
-    leftJoystick.centerPosition = center;
-    leftJoystick.currentPosition = center;
+void TouchInputManager::setupDynamicJoystick(float outerRadius, float innerRadius) {
     leftJoystick.outerRadius = outerRadius;
     leftJoystick.innerRadius = innerRadius;
     leftJoystick.isActive = false;
     leftJoystick.touchId = -1;
     leftJoystick.direction = Vector2(0, 0);
     leftJoystick.magnitude = 0.0f;
-}
-
-void TouchInputManager::setupRightJoystick(Vector2 center, float outerRadius, float innerRadius) {
-    rightJoystick.centerPosition = center;
-    rightJoystick.currentPosition = center;
-    rightJoystick.outerRadius = outerRadius;
-    rightJoystick.innerRadius = innerRadius;
-    rightJoystick.isActive = false;
-    rightJoystick.touchId = -1;
-    rightJoystick.direction = Vector2(0, 0);
-    rightJoystick.magnitude = 0.0f;
+    leftJoystick.isDynamic = true;
+    leftJoystick.fadeAlpha = 0.0f;
 }
 
 void TouchInputManager::addButton(const std::string& label, Vector2 position, float radius) {
@@ -203,20 +194,12 @@ void TouchInputManager::removeButton(const std::string& label) {
     );
 }
 
-Vector2 TouchInputManager::getLeftJoystickDirection() const {
+Vector2 TouchInputManager::getJoystickDirection() const {
     return leftJoystick.direction;
 }
 
-float TouchInputManager::getLeftJoystickMagnitude() const {
+float TouchInputManager::getJoystickMagnitude() const {
     return leftJoystick.magnitude;
-}
-
-Vector2 TouchInputManager::getRightJoystickDirection() const {
-    return rightJoystick.direction;
-}
-
-float TouchInputManager::getRightJoystickMagnitude() const {
-    return rightJoystick.magnitude;
 }
 
 bool TouchInputManager::isButtonPressed(const std::string& label) const {
@@ -294,39 +277,64 @@ void TouchInputManager::setGestureCallback(std::function<void(const Gesture&)> c
 }
 
 void TouchInputManager::updateVirtualControls() {
-    updateJoystick(leftJoystick);
-    updateJoystick(rightJoystick);
+    updateDynamicJoystick();
+    updateCameraDrag();
     updateButtons();
 }
 
-void TouchInputManager::updateJoystick(VirtualJoystick& joystick) {
-    if (joystick.isActive && joystick.touchId >= 0) {
-        auto it = activeTouches.find(joystick.touchId);
+void TouchInputManager::updateDynamicJoystick() {
+    if (leftJoystick.isActive && leftJoystick.touchId >= 0) {
+        auto it = activeTouches.find(leftJoystick.touchId);
         if (it != activeTouches.end()) {
             const Touch& touch = it->second;
-            joystick.currentPosition = touch.position;
+            leftJoystick.currentPosition = touch.position;
             
             // Calculate direction and magnitude
-            Vector2 delta = joystick.currentPosition - joystick.centerPosition;
+            Vector2 delta = leftJoystick.currentPosition - leftJoystick.centerPosition;
             float distance = delta.magnitude();
             
             // Clamp to outer radius
-            if (distance > joystick.outerRadius) {
-                delta = delta.normalized() * joystick.outerRadius;
-                joystick.currentPosition = joystick.centerPosition + delta;
-                distance = joystick.outerRadius;
+            if (distance > leftJoystick.outerRadius) {
+                delta = delta.normalized() * leftJoystick.outerRadius;
+                leftJoystick.currentPosition = leftJoystick.centerPosition + delta;
+                distance = leftJoystick.outerRadius;
             }
             
             // Apply deadzone
-            if (distance < joystickDeadzone * joystick.outerRadius) {
-                joystick.direction = Vector2(0, 0);
-                joystick.magnitude = 0.0f;
+            if (distance < joystickDeadzone * leftJoystick.outerRadius) {
+                leftJoystick.direction = Vector2(0, 0);
+                leftJoystick.magnitude = 0.0f;
             } else {
-                joystick.direction = delta.normalized();
-                joystick.magnitude = (distance - joystickDeadzone * joystick.outerRadius) / 
-                                    (joystick.outerRadius * (1.0f - joystickDeadzone));
-                joystick.magnitude = std::min(1.0f, joystick.magnitude);
+                leftJoystick.direction = delta.normalized();
+                leftJoystick.magnitude = (distance - joystickDeadzone * leftJoystick.outerRadius) / 
+                                        (leftJoystick.outerRadius * (1.0f - joystickDeadzone));
+                leftJoystick.magnitude = std::min(1.0f, leftJoystick.magnitude);
             }
+            
+            leftJoystick.fadeAlpha = 1.0f;
+        }
+    }
+}
+
+void TouchInputManager::updateCameraDrag() {
+    if (isCameraDragging && cameraDragTouchId >= 0) {
+        auto it = activeTouches.find(cameraDragTouchId);
+        if (it != activeTouches.end()) {
+            const Touch& touch = it->second;
+            cameraDragCurrentPos = touch.position;
+            
+            // Calculate delta with sensitivity
+            Vector2 rawDelta = cameraDragCurrentPos - cameraDragStartPos;
+            cameraDragDelta = rawDelta * touchSensitivity * 0.01f;
+            
+            // Update start position for continuous dragging
+            cameraDragStartPos = cameraDragCurrentPos;
+        }
+    } else {
+        // Gradually reduce camera delta when not dragging
+        cameraDragDelta *= 0.9f;
+        if (cameraDragDelta.magnitude() < 0.001f) {
+            cameraDragDelta = Vector2(0, 0);
         }
     }
 }
@@ -373,14 +381,47 @@ void TouchInputManager::detectGestures() {
     }
 }
 
-void TouchInputManager::processTouchForJoystick(const Touch& touch, VirtualJoystick& joystick) {
+void TouchInputManager::processTouchForControls(const Touch& touch) {
     if (touch.phase == TouchPhase::Began) {
-        if (!joystick.isActive && isTouchInCircle(touch.position, joystick.centerPosition, joystick.outerRadius)) {
-            joystick.isActive = true;
-            joystick.touchId = touch.id;
-            joystick.currentPosition = touch.position;
+        // Check if touch is on a button first
+        bool touchOnButton = false;
+        for (const auto& button : buttons) {
+            if (isTouchInCircle(touch.position, button.position, button.radius)) {
+                touchOnButton = true;
+                break;
+            }
+        }
+        
+        if (!touchOnButton) {
+            if (isTouchInLeftHalf(touch)) {
+                // Dynamic joystick - appears where user touches
+                if (!leftJoystick.isActive) {
+                    leftJoystick.isActive = true;
+                    leftJoystick.touchId = touch.id;
+                    leftJoystick.centerPosition = touch.position;
+                    leftJoystick.currentPosition = touch.position;
+                    leftJoystick.fadeAlpha = 1.0f;
+                }
+            } else if (isTouchInRightHalf(touch)) {
+                // Camera drag on right half
+                if (!isCameraDragging) {
+                    isCameraDragging = true;
+                    cameraDragTouchId = touch.id;
+                    cameraDragStartPos = touch.position;
+                    cameraDragCurrentPos = touch.position;
+                    cameraDragDelta = Vector2(0, 0);
+                }
+            }
         }
     }
+}
+
+bool TouchInputManager::isTouchInLeftHalf(const Touch& touch) const {
+    return touch.position.x < screenWidth * 0.5f;
+}
+
+bool TouchInputManager::isTouchInRightHalf(const Touch& touch) const {
+    return touch.position.x >= screenWidth * 0.5f;
 }
 
 void TouchInputManager::processTouchForButtons(const Touch& touch) {

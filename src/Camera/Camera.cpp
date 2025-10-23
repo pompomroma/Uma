@@ -22,7 +22,12 @@ Camera::Camera()
     , smoothSpeed(5.0f)
     , yaw(0.0f)
     , pitch(0.0f)
-    , isMouseLookActive(false) {
+    , isMouseLookActive(false)
+    , cameraYaw(0.0f)
+    , cameraPitch(-20.0f)
+    , targetYaw(0.0f)
+    , targetPitch(-20.0f)
+    , rotationSmoothSpeed(8.0f) {
     updateVectors();
 }
 
@@ -44,7 +49,12 @@ Camera::Camera(const Vector3& position, const Vector3& target, const Vector3& up
     , smoothSpeed(5.0f)
     , yaw(0.0f)
     , pitch(0.0f)
-    , isMouseLookActive(false) {
+    , isMouseLookActive(false)
+    , cameraYaw(0.0f)
+    , cameraPitch(-20.0f)
+    , targetYaw(0.0f)
+    , targetPitch(-20.0f)
+    , rotationSmoothSpeed(8.0f) {
     updateVectors();
 }
 
@@ -144,39 +154,57 @@ void Camera::lookAt(const Vector3& targetPos) {
     updateVectors();
 }
 
-void Camera::updateThirdPerson(const Vector3& targetPosition, const Vector3& targetForward) {
+void Camera::updateThirdPerson(const Vector3& targetPosition, const Vector3& targetForward, float deltaTime) {
     if (mode != CameraMode::ThirdPerson) return;
     
-    // Calculate desired camera position
-    Vector3 targetRight = targetForward.cross(Vector3::up()).normalized();
-    Vector3 targetUp = targetRight.cross(targetForward).normalized();
+    // Update smooth rotation
+    updateSmoothRotation(deltaTime);
     
-    // Apply yaw rotation around the target
-    float yawRad = yaw * M_PI / 180.0f;
-    float pitchRad = pitch * M_PI / 180.0f;
+    // Calculate camera position based on current rotation
+    float yawRad = cameraYaw * M_PI / 180.0f;
+    float pitchRad = cameraPitch * M_PI / 180.0f;
     
-    Vector3 offset = targetRight * std::sin(yawRad) * followDistance +
-                    targetUp * followHeight +
-                    targetForward * std::cos(yawRad) * followDistance;
+    // Calculate offset from target using spherical coordinates
+    float cosYaw = std::cos(yawRad);
+    float sinYaw = std::sin(yawRad);
+    float cosPitch = std::cos(pitchRad);
+    float sinPitch = std::sin(pitchRad);
+    
+    // Camera offset in world space (Roblox-style orbit camera)
+    Vector3 offset(
+        sinYaw * cosPitch * followDistance,
+        sinPitch * followDistance + followHeight,
+        cosYaw * cosPitch * followDistance
+    );
     
     Vector3 desiredPosition = targetPosition + offset;
     
-    // Apply pitch to look down/up
-    Vector3 pitchOffset = targetUp * std::sin(pitchRad) * followDistance;
-    desiredPosition += pitchOffset;
+    // Smooth camera position
+    Vector3 positionDiff = desiredPosition - position;
+    float smoothFactor = 1.0f - std::exp(-smoothSpeed * deltaTime);
+    position += positionDiff * smoothFactor;
     
-    // Smooth camera movement
-    Vector3 direction = desiredPosition - position;
-    float distance = direction.length();
-    
-    if (distance > 0.01f) {
-        velocity = direction.normalized() * std::min(distance * smoothSpeed, distance);
-        position += velocity;
-    }
-    
-    // Always look at the target
-    target = targetPosition;
+    // Always look at the target with a slight offset for better visibility
+    target = targetPosition + Vector3(0, 2.0f, 0);  // Look slightly above the player
     updateVectors();
+}
+
+void Camera::updateSmoothRotation(float deltaTime) {
+    // Smooth rotation interpolation
+    float smoothFactor = 1.0f - std::exp(-rotationSmoothSpeed * deltaTime);
+    
+    // Interpolate yaw (handle wrapping around 360 degrees)
+    float yawDiff = targetYaw - cameraYaw;
+    if (yawDiff > 180.0f) yawDiff -= 360.0f;
+    if (yawDiff < -180.0f) yawDiff += 360.0f;
+    cameraYaw += yawDiff * smoothFactor;
+    
+    // Keep yaw in [0, 360) range
+    while (cameraYaw < 0.0f) cameraYaw += 360.0f;
+    while (cameraYaw >= 360.0f) cameraYaw -= 360.0f;
+    
+    // Interpolate pitch
+    cameraPitch += (targetPitch - cameraPitch) * smoothFactor;
 }
 
 void Camera::handleMouseInput(float deltaX, float deltaY) {
@@ -184,6 +212,21 @@ void Camera::handleMouseInput(float deltaX, float deltaY) {
     
     float sensitivity = mouseSensitivity * 0.1f;
     rotate(deltaX * sensitivity, -deltaY * sensitivity);
+}
+
+void Camera::handleTouchDrag(float deltaX, float deltaY) {
+    // Touch drag for camera rotation (Roblox-style)
+    float sensitivity = mouseSensitivity * 2.0f;  // Higher sensitivity for touch
+    
+    targetYaw += deltaX * sensitivity;
+    targetPitch -= deltaY * sensitivity;
+    
+    // Clamp pitch to prevent camera flipping
+    targetPitch = std::clamp(targetPitch, -80.0f, 80.0f);
+    
+    // Keep yaw in reasonable range
+    while (targetYaw < 0.0f) targetYaw += 360.0f;
+    while (targetYaw >= 360.0f) targetYaw -= 360.0f;
 }
 
 void Camera::handleScrollInput(float scrollDelta) {
@@ -196,7 +239,8 @@ void Camera::handleScrollInput(float scrollDelta) {
 
 void Camera::update(float deltaTime) {
     if (mode == CameraMode::ThirdPerson) {
-        // Third person camera updates are handled by updateThirdPerson
+        // Update smooth rotation even when not explicitly updating third person
+        updateSmoothRotation(deltaTime);
         return;
     }
     
@@ -235,6 +279,15 @@ void Camera::resetThirdPerson() {
     followAngle = 0.0f;
     yaw = 0.0f;
     pitch = -20.0f; // Look down slightly
+    cameraYaw = 0.0f;
+    cameraPitch = -20.0f;
+    targetYaw = 0.0f;
+    targetPitch = -20.0f;
+}
+
+void Camera::setCameraRotation(float newYaw, float newPitch) {
+    targetYaw = newYaw;
+    targetPitch = std::clamp(newPitch, -80.0f, 80.0f);
 }
 
 Vector3 Camera::screenToWorld(const Vector3& screenPos, float screenWidth, float screenHeight) const {

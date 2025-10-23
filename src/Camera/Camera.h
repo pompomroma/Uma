@@ -32,6 +32,13 @@ private:
     float followAngle;
     float mouseSensitivity;
     
+    // Smooth rotation for Roblox-style camera
+    float cameraYaw;
+    float cameraPitch;
+    float targetYaw;
+    float targetPitch;
+    float rotationSmoothSpeed;
+    
     // Camera smoothing
     Vector3 velocity;
     float smoothSpeed;
@@ -83,12 +90,14 @@ public:
     void lookAt(const Vector3& target);
     
     // Third person specific
-    void updateThirdPerson(const Vector3& targetPosition, const Vector3& targetForward);
+    void updateThirdPerson(const Vector3& targetPosition, const Vector3& targetForward, float deltaTime);
     void handleMouseInput(float deltaX, float deltaY);
+    void handleTouchDrag(float deltaX, float deltaY);
     void handleScrollInput(float scrollDelta);
     
     // Update camera
     void update(float deltaTime);
+    void updateSmoothRotation(float deltaTime);
     
     // Matrix generation
     Matrix4 getViewMatrix() const;
@@ -98,6 +107,7 @@ public:
     // Utility functions
     void reset();
     void resetThirdPerson();
+    void setCameraRotation(float yaw, float pitch);
     Vector3 screenToWorld(const Vector3& screenPos, float screenWidth, float screenHeight) const;
     Vector3 worldToScreen(const Vector3& worldPos, float screenWidth, float screenHeight) const;
     
