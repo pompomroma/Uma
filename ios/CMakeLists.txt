@@ -16,22 +16,41 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 set(SOURCES
     # Core game files
     ../src/Game.cpp
+    ../src/Game.h
     ../src/Math/Vector3.cpp
+    ../src/Math/Vector3.h
+    ../src/Math/Vector2.h
     ../src/Math/Matrix4.cpp
+    ../src/Math/Matrix4.h
     ../src/Math/Quaternion.cpp
+    ../src/Math/Quaternion.h
     ../src/Camera/Camera.cpp
+    ../src/Camera/Camera.h
     ../src/Physics/Car.cpp
+    ../src/Physics/Car.h
     ../src/Physics/PhysicsEngine.cpp
+    ../src/Physics/PhysicsEngine.h
     ../src/Rendering/Renderer.cpp
+    ../src/Rendering/Renderer.h
     ../src/Input/InputManager.cpp
+    ../src/Input/InputManager.h
     ../src/Input/TouchInputManager.cpp
+    ../src/Input/TouchInputManager.h
     ../src/World/Track.cpp
+    ../src/World/Track.h
     ../src/Utils/Shader.cpp
+    ../src/Utils/Shader.h
     ../src/Combat/Player.cpp
+    ../src/Combat/Player.h
     ../src/Combat/Projectile.cpp
+    ../src/Combat/Projectile.h
     ../src/Combat/Shield.cpp
+    ../src/Combat/Shield.h
     ../src/Combat/CombatManager.cpp
+    ../src/Combat/CombatManager.h
     ../src/UI/MobileUI.cpp
+    ../src/UI/MobileUI.h
+    ../src/Platform/PlatformDetect.h
     
     # iOS specific
     ios_main.mm
@@ -45,9 +64,16 @@ find_library(METAL_LIBRARY Metal)
 find_library(METALKIT_LIBRARY MetalKit)
 find_library(QUARTZCORE_LIBRARY QuartzCore)
 find_library(GAMECONTROLLER_LIBRARY GameController)
+find_library(OPENGLES_LIBRARY OpenGLES)
 
 # Create iOS app bundle
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
+
+# Add Metal shader to bundle
+set_source_files_properties(shaders/Shader.metal PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Shaders"
+)
+target_sources(${PROJECT_NAME} PRIVATE shaders/Shader.metal)
 
 # Set bundle properties
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -67,12 +93,17 @@ target_link_libraries(${PROJECT_NAME}
     ${METALKIT_LIBRARY}
     ${QUARTZCORE_LIBRARY}
     ${GAMECONTROLLER_LIBRARY}
+    ${OPENGLES_LIBRARY}
 )
 
 # Compiler definitions
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     PLATFORM_IOS=1
+    PLATFORM_MOBILE=1
     GRAPHICS_METAL=1
+    GRAPHICS_OPENGLES=1
+    INPUT_TOUCH=1
+    INPUT_KEYBOARD_MOUSE=0
 )
 
 # Compiler flags

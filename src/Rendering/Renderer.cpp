@@ -1,8 +1,15 @@
 #include "Renderer.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "Platform/PlatformDetect.h"
 #include <iostream>
 #include <cmath>
+
+#if GRAPHICS_OPENGL
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#elif GRAPHICS_METAL
+#include <Metal/Metal.h>
+#include <MetalKit/MetalKit.h>
+#endif
 
 Renderer::Renderer() 
     : screenWidth(1920)
@@ -35,6 +42,7 @@ bool Renderer::initialize(int width, int height) {
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
     
+#if GRAPHICS_OPENGL
     // Initialize OpenGL
     GLenum err = glewInit();
     if (err != GLEW_OK) {
@@ -48,6 +56,11 @@ bool Renderer::initialize(int width, int height) {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+#elif GRAPHICS_METAL
+    // Metal initialization will be handled by the iOS view controller
+    // This is just a placeholder for now
+    std::cout << "Metal renderer initialized for iOS" << std::endl;
+#endif
     
     // Load shaders
     loadShaders();
@@ -85,11 +98,19 @@ void Renderer::endFrame() {
 }
 
 void Renderer::clear() {
+#if GRAPHICS_OPENGL
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#elif GRAPHICS_METAL
+    // Metal clear will be handled in the render pass
+#endif
 }
 
 void Renderer::setViewport(int x, int y, int width, int height) {
+#if GRAPHICS_OPENGL
     glViewport(x, y, width, height);
+#elif GRAPHICS_METAL
+    // Metal viewport will be handled in the render pass
+#endif
     screenWidth = width;
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
@@ -692,3 +713,95 @@ std::string Renderer::getSkyboxFragmentShaderSource() {
         }
     )";
 }
+
+#if GRAPHICS_METAL
+void Renderer::setMetalDevice(id<MTLDevice> device) {
+    metalDevice = device;
+}
+
+void Renderer::setMetalCommandQueue(id<MTLCommandQueue> commandQueue) {
+    metalCommandQueue = commandQueue;
+}
+
+void Renderer::createMetalPipeline() {
+    if (!metalDevice) return;
+    
+    // Load Metal shader library
+    NSError *error = nil;
+    id<MTLLibrary> shaderLibrary = [metalDevice newDefaultLibrary];
+    if (!shaderLibrary) {
+        NSLog(@"Failed to load Metal shader library: %@", error.localizedDescription);
+        return;
+    }
+    
+    // Get shader functions
+    id<MTLFunction> vertexFunction = [shaderLibrary newFunctionWithName:@"vertex_main"];
+    id<MTLFunction> fragmentFunction = [shaderLibrary newFunctionWithName:@"fragment_main"];
+    
+    if (!vertexFunction || !fragmentFunction) {
+        NSLog(@"Failed to load Metal shader functions");
+        return;
+    }
+    
+    // Create Metal pipeline state
+    MTLRenderPipelineDescriptor *pipelineDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
+    pipelineDescriptor.vertexFunction = vertexFunction;
+    pipelineDescriptor.fragmentFunction = fragmentFunction;
+    pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+    pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
+    
+    // Set vertex descriptor
+    MTLVertexDescriptor *vertexDescriptor = [[MTLVertexDescriptor alloc] init];
+    vertexDescriptor.attributes[0].format = MTLVertexFormatFloat3;
+    vertexDescriptor.attributes[0].offset = 0;
+    vertexDescriptor.attributes[0].bufferIndex = 0;
+    vertexDescriptor.attributes[1].format = MTLVertexFormatFloat3;
+    vertexDescriptor.attributes[1].offset = 12;
+    vertexDescriptor.attributes[1].bufferIndex = 0;
+    vertexDescriptor.attributes[2].format = MTLVertexFormatFloat3;
+    vertexDescriptor.attributes[2].offset = 24;
+    vertexDescriptor.attributes[2].bufferIndex = 0;
+    vertexDescriptor.attributes[3].format = MTLVertexFormatFloat2;
+    vertexDescriptor.attributes[3].offset = 36;
+    vertexDescriptor.attributes[3].bufferIndex = 0;
+    vertexDescriptor.layouts[0].stride = 44;
+    vertexDescriptor.layouts[0].stepRate = 1;
+    vertexDescriptor.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+    
+    pipelineDescriptor.vertexDescriptor = vertexDescriptor;
+    
+    metalPipelineState = [metalDevice newRenderPipelineStateWithDescriptor:pipelineDescriptor error:&error];
+    if (!metalPipelineState) {
+        NSLog(@"Failed to create Metal pipeline state: %@", error.localizedDescription);
+    }
+    
+    // Create depth stencil state
+    MTLDepthStencilDescriptor *depthStencilDescriptor = [[MTLDepthStencilDescriptor alloc] init];
+    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLess;
+    depthStencilDescriptor.depthWriteEnabled = YES;
+    metalDepthStencilState = [metalDevice newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+}
+
+void Renderer::renderWithMetal(id<MTLCommandBuffer> commandBuffer, id<MTLTexture> drawableTexture) {
+    if (!metalPipelineState || !commandBuffer || !drawableTexture) return;
+    
+    MTLRenderPassDescriptor *renderPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+    renderPassDescriptor.colorAttachments[0].texture = drawableTexture;
+    renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+    renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(renderState.clearColor.x, renderState.clearColor.y, renderState.clearColor.z, 1.0);
+    renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+    
+    id<MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+    [renderEncoder setRenderPipelineState:metalPipelineState];
+    [renderEncoder setDepthStencilState:metalDepthStencilState];
+    
+    // Set viewport
+    MTLViewport viewport = {0, 0, screenWidth, screenHeight, 0, 1};
+    [renderEncoder setViewport:viewport];
+    
+    // Render objects here
+    // This is a placeholder - actual rendering would be implemented based on the game's needs
+    
+    [renderEncoder endEncoding];
+}
+#endif

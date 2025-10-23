@@ -2,8 +2,14 @@
 #include "../Math/Vector3.h"
 #include "../Math/Matrix4.h"
 #include "../Utils/Shader.h"
+#include "../Platform/PlatformDetect.h"
 #include <vector>
 #include <memory>
+
+#if GRAPHICS_METAL
+#include <Metal/Metal.h>
+#include <MetalKit/MetalKit.h>
+#endif
 
 class Renderer {
 public:
@@ -48,6 +54,13 @@ private:
     
     std::vector<Light> lights;
     RenderState renderState;
+    
+#if GRAPHICS_METAL
+    id<MTLDevice> metalDevice;
+    id<MTLCommandQueue> metalCommandQueue;
+    id<MTLRenderPipelineState> metalPipelineState;
+    id<MTLDepthStencilState> metalDepthStencilState;
+#endif
     
     // Camera matrices
     Matrix4 viewMatrix;
@@ -147,6 +160,14 @@ public:
     void renderQuad(const Vector3& position, float width, float height, const Vector3& color, float opacity = 1.0f);
     void renderText(const std::string& text, float x, float y, float scale, const Vector3& color);
     void renderAbilityIcon(float x, float y, float width, float height, const std::string& key, bool isReady);
+    
+#if GRAPHICS_METAL
+    // Metal-specific methods
+    void setMetalDevice(id<MTLDevice> device);
+    void setMetalCommandQueue(id<MTLCommandQueue> commandQueue);
+    void createMetalPipeline();
+    void renderWithMetal(id<MTLCommandBuffer> commandBuffer, id<MTLTexture> drawableTexture);
+#endif
     
 private:
     void setupMesh(Mesh& mesh);
