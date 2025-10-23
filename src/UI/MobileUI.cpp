@@ -50,8 +50,7 @@ void MobileUI::render() {
         // Render left joystick
         renderVirtualJoystick(touchManager->getLeftJoystickState());
         
-        // Render right joystick
-        renderVirtualJoystick(touchManager->getRightJoystickState());
+        // Do not render right joystick; right half acts as free-look drag area
         
         // Render buttons
         for (const auto& button : touchManager->getButtons()) {

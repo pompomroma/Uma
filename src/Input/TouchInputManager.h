@@ -35,6 +35,8 @@ public:
         int touchId;
         Vector2 direction;
         float magnitude;
+        // Dynamic joystick spawns at touch position within activation area
+        bool isDynamic = false;
     };
 
     struct VirtualButton {
@@ -92,6 +94,11 @@ private:
     std::function<void(const Touch&)> onTouchEnded;
     std::function<void(const Gesture&)> onGesture;
 
+    // Right-half free-look drag state (for camera look)
+    bool rightHalfDragEnabled = true;
+    int cameraDragTouchId = -1;
+    Vector2 rightDragDelta; // accumulated per-frame delta
+
 public:
     TouchInputManager();
     ~TouchInputManager();
@@ -148,6 +155,13 @@ public:
     void setTouchEndedCallback(std::function<void(const Touch&)> callback);
     void setGestureCallback(std::function<void(const Gesture&)> callback);
     
+    // Configuration for control scheme
+    void setRightHalfDragEnabled(bool enable) { rightHalfDragEnabled = enable; }
+    void setLeftJoystickDynamic(bool dynamic) { leftJoystick.isDynamic = dynamic; }
+    
+    // Per-frame right-half drag delta (consumes and resets the accumulator)
+    Vector2 consumeRightHalfDragDelta();
+    
     // Rendering support (positions for UI overlay)
     const VirtualJoystick& getLeftJoystickState() const { return leftJoystick; }
     const VirtualJoystick& getRightJoystickState() const { return rightJoystick; }
@@ -162,4 +176,5 @@ private:
     void processTouchForButtons(const Touch& touch);
     bool isTouchInCircle(Vector2 touchPos, Vector2 center, float radius) const;
     float calculateDistance(Vector2 a, Vector2 b) const;
+    bool isInLeftBottomActivationRegion(const Vector2& pos) const;
 };

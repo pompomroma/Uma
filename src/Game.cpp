@@ -276,8 +276,25 @@ void Game::handleInput() {
     // Handle PvP input
     else if (currentState == GameState::PvPMode) {
         if (localPlayer) {
-            // Movement input (WASD)
+            // Movement input: dynamic left joystick controls movement magnitude and direction
             Vector3 moveDir = Vector3::zero();
+#if PLATFORM_MOBILE
+            if (inputManager->getTouchInputManager()) {
+                Vector2 leftDir = inputManager->getTouchInputManager()->getLeftJoystickDirection();
+                float leftMag = inputManager->getTouchInputManager()->getLeftJoystickMagnitude();
+                // Map joystick X/Y to camera-relative horizontal plane (ignore vertical camera look for movement)
+                Vector3 camForward = camera->getForward();
+                Vector3 camRight = camera->getRight();
+                camForward.y = 0.0f; camRight.y = 0.0f;
+                if (camForward.length() > 0.0001f) camForward = camForward.normalized();
+                if (camRight.length() > 0.0001f) camRight = camRight.normalized();
+                moveDir = (camForward * (-leftDir.y) + camRight * (leftDir.x));
+                if (moveDir.length() > 0.0001f) {
+                    moveDir = moveDir.normalized() * (leftMag * 10.0f); // 10.0f base speed
+                }
+            }
+#else
+            // Desktop fallback: WASD moves camera-relative
             if (inputManager->isKeyPressed(InputManager::Key::W)) {
                 moveDir = moveDir + camera->getForward();
             }
@@ -290,19 +307,22 @@ void Game::handleInput() {
             if (inputManager->isKeyPressed(InputManager::Key::D)) {
                 moveDir = moveDir + camera->getRight();
             }
-            
             if (moveDir.magnitude() > 0) {
-                moveDir = moveDir.normalized() * 10.0f;  // Movement speed
-                localPlayer->setVelocity(moveDir);
-            } else {
-                localPlayer->setVelocity(Vector3::zero());
+                moveDir = moveDir.normalized() * 10.0f;
             }
-            
-            // Look direction from mouse
+#endif
+            localPlayer->setVelocity(moveDir.magnitude() > 0 ? moveDir : Vector3::zero());
+
+            // Camera look: right-half drag controls yaw/pitch
             Vector2 lookInput = inputManager->getCameraLookInput();
             if (lookInput.x != 0.0f || lookInput.y != 0.0f) {
                 camera->handleMouseInput(lookInput.x, lookInput.y);
-                localPlayer->setLookDirection(camera->getForward());
+            }
+            // Smoothly align player's look direction to camera's horizontal facing to avoid awkward shifts
+            Vector3 camFwd = camera->getForward();
+            camFwd.y = 0.0f;
+            if (camFwd.length() > 0.0001f) {
+                localPlayer->setLookDirection(camFwd.normalized());
             }
         }
     }
