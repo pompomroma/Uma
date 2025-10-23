@@ -198,6 +198,7 @@ public:
     void setVelocity(const Vector3& vel);
     void setRotation(const Quaternion& rot);
     void setLookDirection(const Vector3& dir);
+    void updateRotationFromLookDirection();
     void setLocalPlayer(bool isLocal) { isLocalPlayer = isLocal; }
     bool getLocalPlayer() const { return isLocalPlayer; }
     

@@ -53,6 +53,13 @@ void InputManager::update(float deltaTime) {
     updateMouseState();
     updateGamepadState();
     processActionCallbacks();
+    
+#if PLATFORM_MOBILE
+    // Update touch input manager
+    if (touchInputManager) {
+        touchInputManager->update(deltaTime);
+    }
+#endif
 }
 
 void InputManager::processKeyboardInput() {

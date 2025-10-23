@@ -21,8 +21,9 @@ Camera::Camera()
     , velocity(0.0f, 0.0f, 0.0f)
     , smoothSpeed(5.0f)
     , yaw(0.0f)
-    , pitch(0.0f)
-    , isMouseLookActive(false) {
+    , pitch(-20.0f)
+    , isMouseLookActive(false)
+    , touchDragSensitivity(0.3f) {
     updateVectors();
 }
 
@@ -43,8 +44,9 @@ Camera::Camera(const Vector3& position, const Vector3& target, const Vector3& up
     , velocity(0.0f, 0.0f, 0.0f)
     , smoothSpeed(5.0f)
     , yaw(0.0f)
-    , pitch(0.0f)
-    , isMouseLookActive(false) {
+    , pitch(-20.0f)
+    , isMouseLookActive(false)
+    , touchDragSensitivity(0.3f) {
     updateVectors();
 }
 
@@ -147,34 +149,32 @@ void Camera::lookAt(const Vector3& targetPos) {
 void Camera::updateThirdPerson(const Vector3& targetPosition, const Vector3& targetForward) {
     if (mode != CameraMode::ThirdPerson) return;
     
-    // Calculate desired camera position
-    Vector3 targetRight = targetForward.cross(Vector3::up()).normalized();
-    Vector3 targetUp = targetRight.cross(targetForward).normalized();
-    
-    // Apply yaw rotation around the target
+    // Calculate camera position based on yaw and pitch angles
     float yawRad = yaw * M_PI / 180.0f;
     float pitchRad = pitch * M_PI / 180.0f;
     
-    Vector3 offset = targetRight * std::sin(yawRad) * followDistance +
-                    targetUp * followHeight +
-                    targetForward * std::cos(yawRad) * followDistance;
+    // Calculate horizontal and vertical offsets
+    float horizontalDistance = followDistance * std::cos(pitchRad);
+    float verticalDistance = followDistance * std::sin(pitchRad);
     
-    Vector3 desiredPosition = targetPosition + offset;
+    // Calculate camera position behind and above the player
+    Vector3 offset;
+    offset.x = horizontalDistance * std::sin(yawRad);
+    offset.y = followHeight - verticalDistance;  // Adjust height based on pitch
+    offset.z = horizontalDistance * std::cos(yawRad);
     
-    // Apply pitch to look down/up
-    Vector3 pitchOffset = targetUp * std::sin(pitchRad) * followDistance;
-    desiredPosition += pitchOffset;
+    Vector3 desiredPosition = targetPosition - offset;
     
     // Smooth camera movement
     Vector3 direction = desiredPosition - position;
     float distance = direction.length();
     
     if (distance > 0.01f) {
-        velocity = direction.normalized() * std::min(distance * smoothSpeed, distance);
-        position += velocity;
+        float smoothFactor = std::min(1.0f, smoothSpeed * 0.016f);  // Frame-independent smoothing
+        position = position + direction * smoothFactor;
     }
     
-    // Always look at the target
+    // Always look at the target (player position)
     target = targetPosition;
     updateVectors();
 }
@@ -183,6 +183,13 @@ void Camera::handleMouseInput(float deltaX, float deltaY) {
     if (!isMouseLookActive) return;
     
     float sensitivity = mouseSensitivity * 0.1f;
+    rotate(deltaX * sensitivity, -deltaY * sensitivity);
+}
+
+void Camera::handleTouchDrag(float deltaX, float deltaY) {
+    // Touch drag for camera rotation
+    // deltaX rotates horizontally (yaw), deltaY rotates vertically (pitch)
+    float sensitivity = touchDragSensitivity;
     rotate(deltaX * sensitivity, -deltaY * sensitivity);
 }
 
@@ -276,4 +283,22 @@ void Camera::updateVectors() {
     forward = (target - position).normalized();
     right = forward.cross(up).normalized();
     up = right.cross(forward).normalized();
+}
+
+Vector3 Camera::getHorizontalForward() const {
+    // Get forward direction projected onto horizontal plane (y=0)
+    // This is used for player movement direction
+    Vector3 horizontalForward = forward;
+    horizontalForward.y = 0.0f;
+    
+    // Normalize if not zero
+    if (horizontalForward.length() > 0.001f) {
+        horizontalForward = horizontalForward.normalized();
+    } else {
+        // If looking straight up/down, use yaw angle to determine forward
+        float yawRad = yaw * M_PI / 180.0f;
+        horizontalForward = Vector3(std::sin(yawRad), 0.0f, std::cos(yawRad));
+    }
+    
+    return horizontalForward;
 }

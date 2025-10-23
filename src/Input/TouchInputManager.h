@@ -35,6 +35,7 @@ public:
         int touchId;
         Vector2 direction;
         float magnitude;
+        bool isDynamic;  // If true, joystick appears where finger touches
     };
 
     struct VirtualButton {
@@ -70,8 +71,15 @@ private:
     
     // Virtual controls
     VirtualJoystick leftJoystick;   // For movement/steering
-    VirtualJoystick rightJoystick;  // For camera control
+    VirtualJoystick rightJoystick;  // For camera control (deprecated - using camera drag now)
     std::vector<VirtualButton> buttons;
+    
+    // Camera drag control (right half of screen)
+    int cameraDragTouchId;
+    Vector2 cameraDragStart;
+    Vector2 cameraDragCurrent;
+    Vector2 cameraDragDelta;
+    bool isCameraDrag;
     
     // Screen dimensions
     float screenWidth;
@@ -116,7 +124,7 @@ public:
     int getTouchCount() const;
     
     // Virtual joystick setup
-    void setupLeftJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f);
+    void setupLeftJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f, bool dynamic = false);
     void setupRightJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f);
     
     // Virtual button setup
@@ -131,6 +139,10 @@ public:
     bool isButtonPressed(const std::string& label) const;
     bool isButtonJustPressed(const std::string& label) const;
     bool isButtonJustReleased(const std::string& label) const;
+    
+    // Camera drag control (right half of screen)
+    Vector2 getCameraDragDelta() const;
+    bool isCameraDragging() const;
     
     // Gesture detection
     std::vector<Gesture> getGestures() const { return currentGestures; }

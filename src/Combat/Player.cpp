@@ -114,6 +114,9 @@ void Player::update(float deltaTime) {
     updateVisualEffects(deltaTime);
     updateCooldowns(deltaTime);
     checkComboTimeout(deltaTime);
+    
+    // Update rotation to match look direction
+    updateRotationFromLookDirection();
 }
 
 void Player::updateCombat(float deltaTime) {
@@ -550,8 +553,43 @@ void Player::setRotation(const Quaternion& rot) {
     lookDirection = rotation * Vector3::forward();
 }
 
+void Player::updateRotationFromLookDirection() {
+    // Update rotation quaternion based on look direction
+    // This ensures the player model faces the movement direction
+    if (lookDirection.length() > 0.001f) {
+        Vector3 forward = lookDirection.normalized();
+        Vector3 up = Vector3::up();
+        
+        // Calculate right vector
+        Vector3 right = up.cross(forward).normalized();
+        
+        // Recalculate up to ensure orthogonality
+        up = forward.cross(right).normalized();
+        
+        // Create rotation matrix and convert to quaternion
+        // (Simplified - in production you'd use a proper matrix to quaternion conversion)
+        float yaw = std::atan2(forward.x, forward.z);
+        rotation = Quaternion::fromAxisAngle(Vector3::up(), yaw);
+    }
+}
+
 void Player::setLookDirection(const Vector3& dir) {
-    lookDirection = dir.normalized();
+    Vector3 newDirection = dir.normalized();
+    
+    // Smooth rotation towards new direction
+    // Calculate angle between current and new direction
+    float dot = lookDirection.dot(newDirection);
+    
+    if (dot < 0.99f) {  // Only interpolate if there's a significant difference
+        // Smooth interpolation factor (can be adjusted for more/less smoothness)
+        float smoothFactor = 0.2f;
+        
+        // Spherical linear interpolation (slerp) approximation
+        Vector3 interpolated = lookDirection * (1.0f - smoothFactor) + newDirection * smoothFactor;
+        lookDirection = interpolated.normalized();
+    } else {
+        lookDirection = newDirection;
+    }
 }
 
 bool Player::checkHit(const Vector3& point, float radius) const {
