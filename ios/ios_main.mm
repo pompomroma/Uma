@@ -1,5 +1,5 @@
 #import <UIKit/UIKit.h>
-#import "GameViewController.mm"
+#import "GameViewController.h"
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
