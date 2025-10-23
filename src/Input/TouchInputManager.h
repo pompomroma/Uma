@@ -35,6 +35,8 @@ public:
         int touchId;
         Vector2 direction;
         float magnitude;
+        bool isDynamic;  // For dynamic positioning
+        float fadeAlpha; // For visual fading when inactive
     };
 
     struct VirtualButton {
@@ -69,9 +71,15 @@ private:
     std::vector<Gesture> currentGestures;
     
     // Virtual controls
-    VirtualJoystick leftJoystick;   // For movement/steering
-    VirtualJoystick rightJoystick;  // For camera control
+    VirtualJoystick leftJoystick;   // Dynamic joystick for movement
     std::vector<VirtualButton> buttons;
+    
+    // Camera drag control
+    bool isCameraDragging;
+    int cameraDragTouchId;
+    Vector2 cameraDragStartPos;
+    Vector2 cameraDragCurrentPos;
+    Vector2 cameraDragDelta;
     
     // Screen dimensions
     float screenWidth;
@@ -116,18 +124,17 @@ public:
     int getTouchCount() const;
     
     // Virtual joystick setup
-    void setupLeftJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f);
-    void setupRightJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f);
+    void setupDynamicJoystick(float outerRadius = 100.0f, float innerRadius = 40.0f);
     
     // Virtual button setup
     void addButton(const std::string& label, Vector2 position, float radius = 50.0f);
     void removeButton(const std::string& label);
     
     // Virtual control queries
-    Vector2 getLeftJoystickDirection() const;
-    float getLeftJoystickMagnitude() const;
-    Vector2 getRightJoystickDirection() const;
-    float getRightJoystickMagnitude() const;
+    Vector2 getJoystickDirection() const;
+    float getJoystickMagnitude() const;
+    Vector2 getCameraDragDelta() const { return cameraDragDelta; }
+    bool isCameraBeingDragged() const { return isCameraDragging; }
     bool isButtonPressed(const std::string& label) const;
     bool isButtonJustPressed(const std::string& label) const;
     bool isButtonJustReleased(const std::string& label) const;
@@ -149,17 +156,19 @@ public:
     void setGestureCallback(std::function<void(const Gesture&)> callback);
     
     // Rendering support (positions for UI overlay)
-    const VirtualJoystick& getLeftJoystickState() const { return leftJoystick; }
-    const VirtualJoystick& getRightJoystickState() const { return rightJoystick; }
+    const VirtualJoystick& getJoystickState() const { return leftJoystick; }
     const std::vector<VirtualButton>& getButtons() const { return buttons; }
     
 private:
     void updateVirtualControls();
-    void updateJoystick(VirtualJoystick& joystick);
+    void updateDynamicJoystick();
+    void updateCameraDrag();
     void updateButtons();
     void detectGestures();
-    void processTouchForJoystick(const Touch& touch, VirtualJoystick& joystick);
+    void processTouchForControls(const Touch& touch);
     void processTouchForButtons(const Touch& touch);
     bool isTouchInCircle(Vector2 touchPos, Vector2 center, float radius) const;
+    bool isTouchInLeftHalf(const Touch& touch) const;
+    bool isTouchInRightHalf(const Touch& touch) const;
     float calculateDistance(Vector2 a, Vector2 b) const;
 };

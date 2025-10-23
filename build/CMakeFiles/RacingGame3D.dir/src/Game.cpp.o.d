@@ -1,6 +1,6 @@
 CMakeFiles/RacingGame3D.dir/src/Game.cpp.o: /workspace/src/Game.cpp \
-  /workspace/src/Game.h /workspace/src/Camera/Camera.h \
-  /workspace/src/Camera/../Math/Vector3.h \
+  /workspace/src/Game.h /workspace/src/Platform/PlatformDetect.h \
+  /workspace/src/Camera/Camera.h /workspace/src/Camera/../Math/Vector3.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/cmath \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/requires_hosted.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/x86_64-linux-gnu/c++/14/bits/c++config.h \
@@ -66,6 +66,7 @@ CMakeFiles/RacingGame3D.dir/src/Game.cpp.o: /workspace/src/Game.cpp \
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/specfun.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_algobase.h \
@@ -175,6 +176,7 @@ CMakeFiles/RacingGame3D.dir/src/Game.cpp.o: /workspace/src/Game.cpp \
   /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/cerrno \
   /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
@@ -241,6 +243,7 @@ CMakeFiles/RacingGame3D.dir/src/Game.cpp.o: /workspace/src/Game.cpp \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/pstl/execution_defs.h \
   /workspace/src/Input/InputManager.h \
   /workspace/src/Input/../Math/Vector2.h \
+  /workspace/src/Input/../Platform/PlatformDetect.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/functional \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/std_function.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/array \

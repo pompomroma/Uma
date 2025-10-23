@@ -70,6 +70,9 @@ private:
     Vector3 velocity;
     Quaternion rotation;
     Vector3 lookDirection;
+    Vector3 moveDirection;  // Direction to move based on input and camera
+    float moveSpeed;
+    float rotationSpeed;
     
     // Stats
     Stats stats;
@@ -135,7 +138,7 @@ public:
     // Update
     void update(float deltaTime);
     void updateCombat(float deltaTime);
-    void updateMovement(float deltaTime);
+    void updateMovement(float deltaTime, const Vector3& inputDirection, const Vector3& cameraForward, const Vector3& cameraRight);
     void updateStats(float deltaTime);
     void updateProjectiles(float deltaTime);
     void updateBuffs(float deltaTime);
@@ -198,8 +201,10 @@ public:
     void setVelocity(const Vector3& vel);
     void setRotation(const Quaternion& rot);
     void setLookDirection(const Vector3& dir);
+    void setMoveDirection(const Vector3& dir) { moveDirection = dir; }
     void setLocalPlayer(bool isLocal) { isLocalPlayer = isLocal; }
     bool getLocalPlayer() const { return isLocalPlayer; }
+    Vector3 getMoveDirection() const { return moveDirection; }
     
     // Collision detection
     bool checkHit(const Vector3& point, float radius) const;

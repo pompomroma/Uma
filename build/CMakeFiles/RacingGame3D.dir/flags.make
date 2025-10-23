@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/workspace/src -I/workspace/external
 
-CXX_FLAGS = -std=gnu++17 -Wall -Wextra -pedantic
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -pedantic
 

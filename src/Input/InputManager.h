@@ -179,6 +179,9 @@ public:
     Vector2 getCameraLookInput() const;
     float getCameraZoomInput() const;
     
+    // Movement input for player control
+    Vector2 getMoveInput() const;
+    
 #if PLATFORM_MOBILE
     // Mobile-specific input
     TouchInputManager* getTouchInputManager() const { return touchInputManager; }

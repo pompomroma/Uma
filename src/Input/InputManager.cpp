@@ -264,6 +264,30 @@ void InputManager::setResetCallback(std::function<void()> callback) {
     onReset = callback;
 }
 
+void InputManager::setAttack1Callback(std::function<void()> callback) {
+    onAttack1 = callback;
+}
+
+void InputManager::setAttack2Callback(std::function<void()> callback) {
+    onAttack2 = callback;
+}
+
+void InputManager::setShieldCallback(std::function<void()> callback) {
+    onShield = callback;
+}
+
+void InputManager::setTeleportCallback(std::function<void()> callback) {
+    onTeleport = callback;
+}
+
+void InputManager::setInteractCallback(std::function<void()> callback) {
+    onInteract = callback;
+}
+
+void InputManager::setStatMenuCallback(std::function<void()> callback) {
+    onStatMenu = callback;
+}
+
 void InputManager::setMouseLookActive(bool active) {
     isMouseLookActive = active;
 }
@@ -388,12 +412,11 @@ Vector2 InputManager::getCameraLookInput() const {
     Vector2 input(0.0f, 0.0f);
     
 #if PLATFORM_MOBILE
-    // Mobile touch input from right joystick
+    // Mobile uses camera drag from right half of screen
     if (touchInputManager) {
-        Vector2 rightDir = touchInputManager->getRightJoystickDirection();
-        float rightMag = touchInputManager->getRightJoystickMagnitude();
-        input.x = rightDir.x * rightMag * 10.0f; // Scale for camera sensitivity
-        input.y = rightDir.y * rightMag * 10.0f;
+        Vector2 cameraDrag = touchInputManager->getCameraDragDelta();
+        input.x = cameraDrag.x;
+        input.y = cameraDrag.y;
     }
 #else
     if (isMouseLookActive) {
@@ -411,6 +434,37 @@ Vector2 InputManager::getCameraLookInput() const {
 
 float InputManager::getCameraZoomInput() const {
     return getMouseScrollDelta();
+}
+
+Vector2 InputManager::getMoveInput() const {
+    Vector2 input(0.0f, 0.0f);
+    
+#if PLATFORM_MOBILE
+    // Mobile uses joystick for movement
+    if (touchInputManager) {
+        Vector2 joystickDir = touchInputManager->getJoystickDirection();
+        float joystickMag = touchInputManager->getJoystickMagnitude();
+        input.x = joystickDir.x * joystickMag;
+        input.y = -joystickDir.y * joystickMag;  // Y is inverted
+    }
+#else
+    // Desktop keyboard input
+    if (isKeyPressed(Key::W)) input.y += 1.0f;
+    if (isKeyPressed(Key::S)) input.y -= 1.0f;
+    if (isKeyPressed(Key::A)) input.x -= 1.0f;
+    if (isKeyPressed(Key::D)) input.x += 1.0f;
+    
+    // Normalize diagonal movement
+    if (input.magnitude() > 1.0f) {
+        input = input.normalized();
+    }
+    
+    // Gamepad left stick
+    input.x += getLeftStickX();
+    input.y += getLeftStickY();
+#endif
+    
+    return input;
 }
 
 void InputManager::clearInputState() {
