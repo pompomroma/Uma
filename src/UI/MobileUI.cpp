@@ -47,11 +47,14 @@ void MobileUI::render() {
     // For now, it's a placeholder that shows what should be rendered
     
     if (showVirtualControls) {
-        // Render left joystick
-        renderVirtualJoystick(touchManager->getLeftJoystickState());
+        // Render left joystick (only when active for dynamic joystick)
+        const auto& leftJoystick = touchManager->getLeftJoystickState();
+        if (leftJoystick.isActive || !leftJoystick.isDynamic) {
+            renderVirtualJoystick(leftJoystick);
+        }
         
-        // Render right joystick
-        renderVirtualJoystick(touchManager->getRightJoystickState());
+        // Don't render right joystick - using camera drag instead
+        // Right half of screen is for camera rotation
         
         // Render buttons
         for (const auto& button : touchManager->getButtons()) {
@@ -137,17 +140,14 @@ void MobileUI::layoutForPortrait() {
     // Portrait layout: controls at bottom
     float margin = 100.0f;
     
-    // Left joystick (bottom left)
+    // Left dynamic joystick (bottom left) - appears where you touch
     touchManager->setupLeftJoystick(
         Vector2(margin + 80.0f, screenHeight - margin - 80.0f),
-        80.0f, 30.0f
+        100.0f, 40.0f,
+        true  // Dynamic joystick
     );
     
-    // Right joystick (bottom right)
-    touchManager->setupRightJoystick(
-        Vector2(screenWidth - margin - 80.0f, screenHeight - margin - 80.0f),
-        70.0f, 25.0f
-    );
+    // No right joystick - using camera drag on right half of screen
     
     // Action buttons on right side, middle
     float centerY = screenHeight * 0.5f;
@@ -159,20 +159,17 @@ void MobileUI::layoutForPortrait() {
 void MobileUI::layoutForLandscape() {
     if (!touchManager) return;
     
-    // Landscape layout: joysticks at bottom corners, buttons on sides
+    // Landscape layout: dynamic joystick on left, camera drag on right
     float margin = 80.0f;
     
-    // Left joystick for steering (bottom left)
+    // Left dynamic joystick for movement (bottom left) - appears where you touch
     touchManager->setupLeftJoystick(
         Vector2(margin + 100.0f, screenHeight - margin - 100.0f),
-        100.0f, 40.0f
+        100.0f, 40.0f,
+        true  // Dynamic joystick
     );
     
-    // Right joystick for camera (bottom right)  
-    touchManager->setupRightJoystick(
-        Vector2(screenWidth - margin - 100.0f, screenHeight - margin - 100.0f),
-        80.0f, 30.0f
-    );
+    // No right joystick - using camera drag on right half of screen
     
     // Clear existing buttons and add new ones in landscape positions
     // Action buttons (right side, vertically centered)

@@ -37,9 +37,12 @@ private:
     float smoothSpeed;
     
     // Input state
-    float yaw;
-    float pitch;
+    float yaw;   // Horizontal rotation angle
+    float pitch; // Vertical rotation angle (up/down)
     bool isMouseLookActive;
+    
+    // Touch drag sensitivity
+    float touchDragSensitivity;
 
 public:
     Camera();
@@ -86,6 +89,16 @@ public:
     void updateThirdPerson(const Vector3& targetPosition, const Vector3& targetForward);
     void handleMouseInput(float deltaX, float deltaY);
     void handleScrollInput(float scrollDelta);
+    
+    // Touch input for mobile
+    void handleTouchDrag(float deltaX, float deltaY);
+    
+    // Get camera angles
+    float getYaw() const { return yaw; }
+    float getPitch() const { return pitch; }
+    
+    // Get horizontal forward direction (for player movement)
+    Vector3 getHorizontalForward() const;
     
     // Update camera
     void update(float deltaTime);

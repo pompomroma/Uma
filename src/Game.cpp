@@ -276,24 +276,68 @@ void Game::handleInput() {
     // Handle PvP input
     else if (currentState == GameState::PvPMode) {
         if (localPlayer) {
-            // Movement input (WASD)
+#if PLATFORM_MOBILE
+            // Mobile input - use joystick for movement and camera drag for rotation
+            if (touchInputManager) {
+                // Camera rotation from touch drag (right half of screen)
+                if (touchInputManager->isCameraDragging()) {
+                    Vector2 dragDelta = touchInputManager->getCameraDragDelta();
+                    if (dragDelta.x != 0.0f || dragDelta.y != 0.0f) {
+                        camera->handleTouchDrag(dragDelta.x, dragDelta.y);
+                    }
+                }
+                
+                // Player movement from joystick (left side of screen)
+                Vector2 joystickDir = touchInputManager->getLeftJoystickDirection();
+                float joystickMag = touchInputManager->getLeftJoystickMagnitude();
+                
+                if (joystickMag > 0.0f) {
+                    // Get camera's horizontal forward and right directions
+                    Vector3 cameraForward = camera->getHorizontalForward();
+                    Vector3 cameraRight = camera->getRight();
+                    cameraRight.y = 0.0f;
+                    cameraRight = cameraRight.normalized();
+                    
+                    // Calculate movement direction based on joystick and camera
+                    // joystick.y is forward/backward, joystick.x is left/right
+                    Vector3 moveDir = cameraForward * (-joystickDir.y) + cameraRight * joystickDir.x;
+                    moveDir = moveDir.normalized() * 10.0f * joystickMag;  // Movement speed
+                    localPlayer->setVelocity(moveDir);
+                    
+                    // Update player look direction to face movement direction
+                    if (moveDir.length() > 0.1f) {
+                        localPlayer->setLookDirection(moveDir.normalized());
+                    }
+                } else {
+                    localPlayer->setVelocity(Vector3::zero());
+                }
+            }
+#else
+            // Desktop input - WASD for movement
             Vector3 moveDir = Vector3::zero();
             if (inputManager->isKeyPressed(InputManager::Key::W)) {
-                moveDir = moveDir + camera->getForward();
+                moveDir = moveDir + camera->getHorizontalForward();
             }
             if (inputManager->isKeyPressed(InputManager::Key::S)) {
-                moveDir = moveDir - camera->getForward();
+                moveDir = moveDir - camera->getHorizontalForward();
             }
             if (inputManager->isKeyPressed(InputManager::Key::A)) {
-                moveDir = moveDir - camera->getRight();
+                Vector3 cameraRight = camera->getRight();
+                cameraRight.y = 0.0f;
+                cameraRight = cameraRight.normalized();
+                moveDir = moveDir - cameraRight;
             }
             if (inputManager->isKeyPressed(InputManager::Key::D)) {
-                moveDir = moveDir + camera->getRight();
+                Vector3 cameraRight = camera->getRight();
+                cameraRight.y = 0.0f;
+                cameraRight = cameraRight.normalized();
+                moveDir = moveDir + cameraRight;
             }
             
             if (moveDir.magnitude() > 0) {
                 moveDir = moveDir.normalized() * 10.0f;  // Movement speed
                 localPlayer->setVelocity(moveDir);
+                localPlayer->setLookDirection(moveDir.normalized());
             } else {
                 localPlayer->setVelocity(Vector3::zero());
             }
@@ -302,8 +346,8 @@ void Game::handleInput() {
             Vector2 lookInput = inputManager->getCameraLookInput();
             if (lookInput.x != 0.0f || lookInput.y != 0.0f) {
                 camera->handleMouseInput(lookInput.x, lookInput.y);
-                localPlayer->setLookDirection(camera->getForward());
             }
+#endif
         }
     }
     // Handle racing input
@@ -391,11 +435,18 @@ void Game::setCamera(std::unique_ptr<Camera> newCamera) {
 }
 
 void Game::updateCamera(float dt) {
-    if (!camera || !playerCar) return;
+    if (!camera) return;
     
-    if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
-        camera->updateThirdPerson(playerCar->getPosition(), playerCar->getForward());
-    } else {
+    // For racing mode
+    if (currentState == GameState::Playing && playerCar) {
+        if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
+            camera->updateThirdPerson(playerCar->getPosition(), playerCar->getForward());
+        } else {
+            camera->update(dt);
+        }
+    }
+    // For PvP mode, camera is updated in updatePvPMode
+    else if (currentState != GameState::PvPMode) {
         camera->update(dt);
     }
     
@@ -794,7 +845,10 @@ void Game::updatePvPMode(float dt) {
     // Update camera to follow local player
     if (camera && localPlayer) {
         camera->setFollowTarget(localPlayer->getPosition());
-        camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
+        // Use camera's current orientation instead of player's look direction
+        // This creates a locked third-person camera like Roblox
+        Vector3 cameraForward = camera->getHorizontalForward();
+        camera->updateThirdPerson(localPlayer->getPosition(), cameraForward);
     }
     
     // Check for level ups
