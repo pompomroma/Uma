@@ -22,7 +22,14 @@ Camera::Camera()
     , smoothSpeed(5.0f)
     , yaw(0.0f)
     , pitch(0.0f)
-    , isMouseLookActive(false) {
+    , isMouseLookActive(false)
+    , isCameraLocked(false)
+    , cameraOffset(0.0f, 8.0f, -15.0f)
+    , horizontalAngle(0.0f)
+    , verticalAngle(-20.0f)
+    , minVerticalAngle(-80.0f)
+    , maxVerticalAngle(80.0f)
+    , cameraLerpSpeed(8.0f) {
     updateVectors();
 }
 
@@ -44,7 +51,14 @@ Camera::Camera(const Vector3& position, const Vector3& target, const Vector3& up
     , smoothSpeed(5.0f)
     , yaw(0.0f)
     , pitch(0.0f)
-    , isMouseLookActive(false) {
+    , isMouseLookActive(false)
+    , isCameraLocked(false)
+    , cameraOffset(0.0f, 8.0f, -15.0f)
+    , horizontalAngle(0.0f)
+    , verticalAngle(-20.0f)
+    , minVerticalAngle(-80.0f)
+    , maxVerticalAngle(80.0f)
+    , cameraLerpSpeed(8.0f) {
     updateVectors();
 }
 
@@ -276,4 +290,75 @@ void Camera::updateVectors() {
     forward = (target - position).normalized();
     right = forward.cross(up).normalized();
     up = right.cross(forward).normalized();
+}
+
+// Mobile camera control implementations
+void Camera::setCameraLocked(bool locked) {
+    isCameraLocked = locked;
+    if (locked) {
+        // Initialize camera angles based on current camera state
+        Vector3 direction = (target - position).normalized();
+        horizontalAngle = std::atan2(direction.x, direction.z) * 180.0f / M_PI;
+        verticalAngle = std::asin(-direction.y) * 180.0f / M_PI;
+        verticalAngle = std::clamp(verticalAngle, minVerticalAngle, maxVerticalAngle);
+    }
+}
+
+void Camera::handleScreenDrag(float deltaX, float deltaY, float screenWidth, float screenHeight) {
+    if (!isCameraLocked) return;
+    
+    // Convert screen delta to angle delta
+    float sensitivity = mouseSensitivity * 0.5f; // Adjust for touch sensitivity
+    
+    // Horizontal rotation (yaw)
+    horizontalAngle += deltaX * sensitivity;
+    
+    // Vertical rotation (pitch) - inverted for natural touch feel
+    verticalAngle -= deltaY * sensitivity;
+    verticalAngle = std::clamp(verticalAngle, minVerticalAngle, maxVerticalAngle);
+}
+
+void Camera::updateLockedThirdPerson(const Vector3& targetPosition, float deltaTime) {
+    if (!isCameraLocked) {
+        // Fall back to regular third person if not locked
+        updateThirdPerson(targetPosition, Vector3::forward());
+        return;
+    }
+    
+    // Calculate camera position based on angles
+    float hRadians = horizontalAngle * M_PI / 180.0f;
+    float vRadians = verticalAngle * M_PI / 180.0f;
+    
+    // Calculate offset from target
+    Vector3 offset;
+    offset.x = std::sin(hRadians) * std::cos(vRadians) * followDistance;
+    offset.y = std::sin(vRadians) * followDistance + followHeight;
+    offset.z = std::cos(hRadians) * std::cos(vRadians) * followDistance;
+    
+    Vector3 desiredPosition = targetPosition + offset;
+    
+    // Smooth camera movement
+    Vector3 direction = desiredPosition - position;
+    float distance = direction.length();
+    
+    if (distance > 0.01f) {
+        float lerpFactor = std::min(1.0f, cameraLerpSpeed * deltaTime);
+        position = position + direction * lerpFactor;
+    }
+    
+    // Always look at the target
+    target = targetPosition + Vector3(0, 1.0f, 0); // Look slightly above target center
+    updateVectors();
+}
+
+Vector3 Camera::getCameraForwardHorizontal() const {
+    // Get forward direction projected onto horizontal plane
+    Vector3 horizontalForward = forward;
+    horizontalForward.y = 0;
+    return horizontalForward.normalized();
+}
+
+void Camera::setVerticalAngleLimits(float minAngle, float maxAngle) {
+    minVerticalAngle = minAngle;
+    maxVerticalAngle = maxAngle;
 }

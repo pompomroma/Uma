@@ -40,6 +40,15 @@ private:
     float yaw;
     float pitch;
     bool isMouseLookActive;
+    
+    // Mobile camera controls
+    bool isCameraLocked;
+    Vector3 cameraOffset;
+    float horizontalAngle;
+    float verticalAngle;
+    float minVerticalAngle;
+    float maxVerticalAngle;
+    float cameraLerpSpeed;
 
 public:
     Camera();
@@ -86,6 +95,14 @@ public:
     void updateThirdPerson(const Vector3& targetPosition, const Vector3& targetForward);
     void handleMouseInput(float deltaX, float deltaY);
     void handleScrollInput(float scrollDelta);
+    
+    // Mobile camera controls
+    void setCameraLocked(bool locked);
+    bool isCameraLockedMode() const { return isCameraLocked; }
+    void handleScreenDrag(float deltaX, float deltaY, float screenWidth, float screenHeight);
+    void updateLockedThirdPerson(const Vector3& targetPosition, float deltaTime);
+    Vector3 getCameraForwardHorizontal() const;
+    void setVerticalAngleLimits(float minAngle, float maxAngle);
     
     // Update camera
     void update(float deltaTime);

@@ -35,6 +35,8 @@ public:
         int touchId;
         Vector2 direction;
         float magnitude;
+        bool isDynamic;
+        Vector2 initialTouchPosition;
     };
 
     struct VirtualButton {
@@ -69,9 +71,21 @@ private:
     std::vector<Gesture> currentGestures;
     
     // Virtual controls
-    VirtualJoystick leftJoystick;   // For movement/steering
-    VirtualJoystick rightJoystick;  // For camera control
+    VirtualJoystick leftJoystick;   // For movement (dynamic)
+    VirtualJoystick rightJoystick;  // For camera control (deprecated - using screen drag)
     std::vector<VirtualButton> buttons;
+    
+    // Screen drag controls
+    struct ScreenDragArea {
+        Vector2 topLeft;
+        Vector2 bottomRight;
+        bool isActive;
+        int touchId;
+        Vector2 lastPosition;
+        Vector2 deltaPosition;
+    };
+    
+    ScreenDragArea cameraControlArea; // Right half of screen for camera control
     
     // Screen dimensions
     float screenWidth;
@@ -118,6 +132,10 @@ public:
     // Virtual joystick setup
     void setupLeftJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f);
     void setupRightJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f);
+    void setupDynamicJoystick(float outerRadius = 100.0f, float innerRadius = 40.0f);
+    
+    // Screen drag area setup
+    void setupCameraControlArea(Vector2 topLeft, Vector2 bottomRight);
     
     // Virtual button setup
     void addButton(const std::string& label, Vector2 position, float radius = 50.0f);
@@ -131,6 +149,10 @@ public:
     bool isButtonPressed(const std::string& label) const;
     bool isButtonJustPressed(const std::string& label) const;
     bool isButtonJustReleased(const std::string& label) const;
+    
+    // Screen drag queries
+    Vector2 getCameraDragDelta() const;
+    bool isCameraDragActive() const;
     
     // Gesture detection
     std::vector<Gesture> getGestures() const { return currentGestures; }
@@ -157,9 +179,13 @@ private:
     void updateVirtualControls();
     void updateJoystick(VirtualJoystick& joystick);
     void updateButtons();
+    void updateScreenDrag();
     void detectGestures();
     void processTouchForJoystick(const Touch& touch, VirtualJoystick& joystick);
     void processTouchForButtons(const Touch& touch);
+    void processTouchForScreenDrag(const Touch& touch);
+    void createDynamicJoystick(Vector2 touchPosition);
     bool isTouchInCircle(Vector2 touchPos, Vector2 center, float radius) const;
+    bool isTouchInRectangle(Vector2 touchPos, Vector2 topLeft, Vector2 bottomRight) const;
     float calculateDistance(Vector2 a, Vector2 b) const;
 };
