@@ -20,6 +20,7 @@ set(SOURCES
     src/Game.h
     src/Math/Vector3.cpp
     src/Math/Vector3.h
+    src/Math/Vector2.h
     src/Math/Matrix4.cpp
     src/Math/Matrix4.h
     src/Math/Quaternion.cpp
@@ -46,7 +47,18 @@ set(SOURCES
     src/Combat/Shield.h
     src/Combat/CombatManager.cpp
     src/Combat/CombatManager.h
+    src/Platform/PlatformDetect.h
 )
+
+# Add mobile sources if building for mobile platforms
+if(PLATFORM_MOBILE)
+    list(APPEND SOURCES
+        src/Input/TouchInputManager.cpp
+        src/Input/TouchInputManager.h
+        src/UI/MobileUI.cpp
+        src/UI/MobileUI.h
+    )
+endif()
 
 # Create executable
 add_executable(${PROJECT_NAME} ${SOURCES})

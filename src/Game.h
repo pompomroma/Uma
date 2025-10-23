@@ -1,4 +1,5 @@
 #pragma once
+#include "Platform/PlatformDetect.h"
 #include "Camera/Camera.h"
 #include "Physics/Car.h"
 #include "Physics/PhysicsEngine.h"
@@ -9,6 +10,11 @@
 #include "Combat/Player.h"
 #include <memory>
 #include <vector>
+
+#if PLATFORM_MOBILE
+#include "Input/TouchInputManager.h"
+#include "UI/MobileUI.h"
+#endif
 
 class Game {
 public:
@@ -29,6 +35,11 @@ private:
     std::unique_ptr<Camera> camera;
     std::unique_ptr<Track> track;
     std::unique_ptr<CombatManager> combatManager;
+    
+#if PLATFORM_MOBILE
+    std::unique_ptr<TouchInputManager> touchInputManager;
+    std::unique_ptr<MobileUI> mobileUI;
+#endif
     
     // Game objects
     std::vector<std::unique_ptr<Car>> cars;
@@ -191,6 +202,13 @@ public:
     void loadSettings();
     void saveSettings();
     void showMessage(const std::string& message);
+    
+#if PLATFORM_MOBILE
+    // Mobile-specific
+    void handleTouchInput(int touchId, float x, float y, int phase, float pressure = 1.0f);
+    void handleDeviceOrientation(float width, float height);
+    void setLowPowerMode(bool enabled);
+#endif
     
 private:
     void initializeGame();

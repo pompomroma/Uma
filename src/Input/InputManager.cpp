@@ -1,10 +1,19 @@
 #include "InputManager.h"
+#include "../Platform/PlatformDetect.h"
 #include <algorithm>
 #include <cstring>
 
+#if PLATFORM_MOBILE
+#include "TouchInputManager.h"
+#endif
+
 InputManager::InputManager() 
     : isMouseLookActive(false)
-    , isInputEnabled(true) {
+    , isInputEnabled(true)
+#if PLATFORM_MOBILE
+    , touchInputManager(nullptr)
+#endif
+{
     // Initialize key states
     for (int i = 0; i < (int)Key::Count; i++) {
         keyStates[(Key)i] = false;
@@ -266,6 +275,19 @@ void InputManager::setInputEnabled(bool enabled) {
 float InputManager::getAccelerateInput() const {
     float input = 0.0f;
     
+#if PLATFORM_MOBILE
+    // Mobile touch input
+    if (touchInputManager) {
+        if (touchInputManager->isButtonPressed("accelerate")) {
+            input = 1.0f;
+        }
+        // Or use forward joystick direction
+        Vector2 leftDir = touchInputManager->getLeftJoystickDirection();
+        if (leftDir.y < -0.1f) { // Assuming Y up is negative
+            input = std::max(input, std::abs(leftDir.y));
+        }
+    }
+#else
     // Keyboard input
     if (isKeyPressed(Key::W) || isKeyPressed(Key::Up)) {
         input = 1.0f;
@@ -276,6 +298,7 @@ float InputManager::getAccelerateInput() const {
     if (rightTrigger > 0.1f) {
         input = std::max(input, rightTrigger);
     }
+#endif
     
     return input;
 }
@@ -283,6 +306,19 @@ float InputManager::getAccelerateInput() const {
 float InputManager::getBrakeInput() const {
     float input = 0.0f;
     
+#if PLATFORM_MOBILE
+    // Mobile touch input
+    if (touchInputManager) {
+        if (touchInputManager->isButtonPressed("brake")) {
+            input = 1.0f;
+        }
+        // Or use backward joystick direction
+        Vector2 leftDir = touchInputManager->getLeftJoystickDirection();
+        if (leftDir.y > 0.1f) {
+            input = std::max(input, leftDir.y);
+        }
+    }
+#else
     // Keyboard input
     if (isKeyPressed(Key::S) || isKeyPressed(Key::Down)) {
         input = 1.0f;
@@ -293,6 +329,7 @@ float InputManager::getBrakeInput() const {
     if (leftTrigger > 0.1f) {
         input = std::max(input, leftTrigger);
     }
+#endif
     
     return input;
 }
@@ -300,6 +337,13 @@ float InputManager::getBrakeInput() const {
 float InputManager::getSteerInput() const {
     float input = 0.0f;
     
+#if PLATFORM_MOBILE
+    // Mobile touch input
+    if (touchInputManager) {
+        Vector2 leftDir = touchInputManager->getLeftJoystickDirection();
+        input = leftDir.x; // Left/right steering
+    }
+#else
     // Keyboard input
     if (isKeyPressed(Key::A) || isKeyPressed(Key::Left)) {
         input -= 1.0f;
@@ -313,21 +357,45 @@ float InputManager::getSteerInput() const {
     if (std::abs(leftStickX) > 0.1f) {
         input = leftStickX;
     }
+#endif
     
     return input;
 }
 
 bool InputManager::getBoostInput() const {
+#if PLATFORM_MOBILE
+    if (touchInputManager) {
+        return touchInputManager->isButtonPressed("boost");
+    }
+    return false;
+#else
     return isKeyPressed(Key::Space) || isGamepadButtonPressed(0); // A button
+#endif
 }
 
 bool InputManager::getHandbrakeInput() const {
+#if PLATFORM_MOBILE
+    if (touchInputManager) {
+        return touchInputManager->isButtonPressed("handbrake");
+    }
+    return false;
+#else
     return isKeyPressed(Key::Shift) || isGamepadButtonPressed(1); // B button
+#endif
 }
 
 Vector2 InputManager::getCameraLookInput() const {
     Vector2 input(0.0f, 0.0f);
     
+#if PLATFORM_MOBILE
+    // Mobile touch input from right joystick
+    if (touchInputManager) {
+        Vector2 rightDir = touchInputManager->getRightJoystickDirection();
+        float rightMag = touchInputManager->getRightJoystickMagnitude();
+        input.x = rightDir.x * rightMag * 10.0f; // Scale for camera sensitivity
+        input.y = rightDir.y * rightMag * 10.0f;
+    }
+#else
     if (isMouseLookActive) {
         input.x = getMouseDeltaX();
         input.y = getMouseDeltaY();
@@ -336,6 +404,7 @@ Vector2 InputManager::getCameraLookInput() const {
     // Gamepad right stick
     input.x += getRightStickX();
     input.y += getRightStickY();
+#endif
     
     return input;
 }
@@ -434,3 +503,33 @@ InputManager::Action InputManager::getActionFromString(const std::string& action
     // For now, return a default
     return Action::Accelerate;
 }
+
+#if PLATFORM_MOBILE
+void InputManager::setTouchInputManager(TouchInputManager* mgr) {
+    touchInputManager = mgr;
+}
+
+void InputManager::processTouchInput(int touchId, float x, float y, int phase, float pressure) {
+    if (touchInputManager) {
+        TouchInputManager::TouchPhase touchPhase;
+        switch (phase) {
+            case 0: touchPhase = TouchInputManager::TouchPhase::Began; break;
+            case 1: touchPhase = TouchInputManager::TouchPhase::Moved; break;
+            case 2: touchPhase = TouchInputManager::TouchPhase::Stationary; break;
+            case 3: touchPhase = TouchInputManager::TouchPhase::Ended; break;
+            case 4: touchPhase = TouchInputManager::TouchPhase::Cancelled; break;
+            default: touchPhase = TouchInputManager::TouchPhase::Began; break;
+        }
+        
+        if (phase == 0) {
+            touchInputManager->registerTouch(touchId, x, y, touchPhase, pressure);
+        } else if (phase == 1 || phase == 2) {
+            touchInputManager->updateTouch(touchId, x, y);
+        } else if (phase == 3) {
+            touchInputManager->endTouch(touchId);
+        } else if (phase == 4) {
+            touchInputManager->cancelTouch(touchId);
+        }
+    }
+}
+#endif

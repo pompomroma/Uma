@@ -1,8 +1,12 @@
 #include "Game.h"
+#include "Platform/PlatformDetect.h"
 #include <iostream>
 #include <chrono>
 #include <algorithm>
+
+#if !PLATFORM_MOBILE
 #include <GLFW/glfw3.h>
+#endif
 
 Game::Game() 
     : currentState(GameState::Menu)
@@ -45,7 +49,10 @@ bool Game::initialize(int width, int height, const std::string& title) {
     screenWidth = width;
     screenHeight = height;
     
-    // Initialize GLFW
+    std::cout << "Initializing game for platform: " << Platform::getPlatformName() << std::endl;
+    
+#if !PLATFORM_MOBILE
+    // Desktop: Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return false;
@@ -66,6 +73,7 @@ bool Game::initialize(int width, int height, const std::string& title) {
     }
     
     glfwMakeContextCurrent(window);
+#endif
     
     // Initialize renderer
     renderer = std::make_unique<Renderer>();
@@ -77,6 +85,21 @@ bool Game::initialize(int width, int height, const std::string& title) {
     // Initialize input manager
     inputManager = std::make_unique<InputManager>();
     inputManager->initialize();
+    
+#if PLATFORM_MOBILE
+    // Initialize mobile-specific input
+    touchInputManager = std::make_unique<TouchInputManager>();
+    touchInputManager->initialize(static_cast<float>(width), static_cast<float>(height));
+    
+    // Link touch manager to input manager
+    inputManager->setTouchInputManager(touchInputManager.get());
+    
+    // Initialize mobile UI
+    mobileUI = std::make_unique<MobileUI>();
+    mobileUI->initialize(touchInputManager.get(), static_cast<float>(width), static_cast<float>(height));
+    
+    std::cout << "Mobile input and UI initialized" << std::endl;
+#endif
     
     // Initialize physics engine
     physicsEngine = std::make_unique<PhysicsEngine>();
@@ -93,6 +116,18 @@ bool Game::initialize(int width, int height, const std::string& title) {
 
 void Game::shutdown() {
     isRunning = false;
+    
+#if PLATFORM_MOBILE
+    if (mobileUI) {
+        mobileUI->shutdown();
+        mobileUI.reset();
+    }
+    
+    if (touchInputManager) {
+        touchInputManager->shutdown();
+        touchInputManager.reset();
+    }
+#endif
     
     if (renderer) {
         renderer->shutdown();
@@ -113,7 +148,9 @@ void Game::shutdown() {
     localPlayer = nullptr;
     pvpPlayers.clear();
     
+#if !PLATFORM_MOBILE
     glfwTerminate();
+#endif
 }
 
 void Game::run() {
@@ -196,6 +233,13 @@ void Game::render() {
     if (showDebugInfo) {
         renderDebugInfo();
     }
+    
+#if PLATFORM_MOBILE
+    // Render mobile UI (virtual controls, HUD)
+    if (mobileUI) {
+        mobileUI->render();
+    }
+#endif
     
     renderer->endFrame();
 }
@@ -1001,3 +1045,45 @@ void Game::renderCombatHUD() {
         renderer->renderText(kda, screenWidth - 200, 50, 1.2f, Vector3(1, 1, 1));
     }
 }
+
+#if PLATFORM_MOBILE
+// Mobile-specific implementations
+void Game::handleTouchInput(int touchId, float x, float y, int phase, float pressure) {
+    if (inputManager) {
+        inputManager->processTouchInput(touchId, x, y, phase, pressure);
+    }
+}
+
+void Game::handleDeviceOrientation(float width, float height) {
+    screenWidth = static_cast<int>(width);
+    screenHeight = static_cast<int>(height);
+    
+    if (renderer) {
+        renderer->setViewport(0, 0, screenWidth, screenHeight);
+    }
+    
+    if (touchInputManager) {
+        touchInputManager->setScreenSize(width, height);
+    }
+    
+    if (mobileUI) {
+        mobileUI->setScreenSize(width, height);
+    }
+    
+    if (camera) {
+        camera->setAspectRatio(width / height);
+    }
+}
+
+void Game::setLowPowerMode(bool enabled) {
+    // Reduce rendering quality, physics update rate, etc. for battery saving
+    if (enabled) {
+        // Lower graphics quality
+        // Reduce physics timestep
+        // Disable some effects
+        std::cout << "Low power mode enabled" << std::endl;
+    } else {
+        std::cout << "Low power mode disabled" << std::endl;
+    }
+}
+#endif
