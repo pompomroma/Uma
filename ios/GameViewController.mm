@@ -1,8 +1,7 @@
-#import <UIKit/UIKit.h>
-#import <Metal/Metal.h>
-#import <MetalKit/MetalKit.h>
+#import "GameViewController.h"
 #include "../src/Game.h"
 #include <memory>
+#include <algorithm>
 
 @interface GameViewController : UIViewController <MTKViewDelegate>
 
@@ -97,7 +96,7 @@
     _game->update(deltaTime);
     _game->render();
     
-    // Present drawable
+    // Present drawable (no-op draw commands here as Renderer uses GL on desktop only)
     id<MTLCommandBuffer> commandBuffer = [self.commandQueue commandBuffer];
     [commandBuffer presentDrawable:view.currentDrawable];
     [commandBuffer commit];

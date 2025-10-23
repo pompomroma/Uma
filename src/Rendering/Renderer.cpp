@@ -1,8 +1,12 @@
 #include "Renderer.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "../Platform/PlatformDetect.h"
 #include <iostream>
 #include <cmath>
+
+#if GRAPHICS_OPENGL
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#endif
 
 Renderer::Renderer() 
     : screenWidth(1920)
@@ -35,7 +39,8 @@ bool Renderer::initialize(int width, int height) {
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
     
-    // Initialize OpenGL
+    // Initialize graphics backend
+#if GRAPHICS_OPENGL
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << std::endl;
@@ -48,6 +53,9 @@ bool Renderer::initialize(int width, int height) {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+#else
+    // iOS/Metal path: no GL context here; actual draw/clear handled in GameViewController.
+#endif
     
     // Load shaders
     loadShaders();
@@ -76,20 +84,26 @@ void Renderer::shutdown() {
 
 void Renderer::beginFrame() {
     resetStats();
+#if GRAPHICS_OPENGL
     glClearColor(renderState.clearColor.x, renderState.clearColor.y, renderState.clearColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
 }
 
 void Renderer::endFrame() {
-    // Swap buffers would be called here
+    // Swap/present handled by platform layer
 }
 
 void Renderer::clear() {
+#if GRAPHICS_OPENGL
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
 }
 
 void Renderer::setViewport(int x, int y, int width, int height) {
+#if GRAPHICS_OPENGL
     glViewport(x, y, width, height);
+#endif
     screenWidth = width;
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
@@ -191,15 +205,21 @@ void Renderer::renderPlane(const Vector3& position, const Vector3& normal, float
 }
 
 void Renderer::renderLine(const Vector3& start, const Vector3& end, const Vector3& color) {
-    // Line rendering implementation
+#if GRAPHICS_OPENGL
     glLineWidth(renderState.lineWidth);
     // ... line rendering code
+#else
+    (void)start; (void)end; (void)color;
+#endif
 }
 
 void Renderer::renderGrid(int size, float spacing, const Vector3& color) {
-    // Grid rendering implementation
+#if GRAPHICS_OPENGL
     glLineWidth(renderState.lineWidth);
     // ... grid rendering code
+#else
+    (void)size; (void)spacing; (void)color;
+#endif
 }
 
 void Renderer::addLight(const Light& light) {
@@ -226,29 +246,35 @@ void Renderer::setClearColor(const Vector3& color) {
 
 void Renderer::setDepthTest(bool enable) {
     renderState.depthTest = enable;
+#if GRAPHICS_OPENGL
     if (enable) {
         glEnable(GL_DEPTH_TEST);
     } else {
         glDisable(GL_DEPTH_TEST);
     }
+#endif
 }
 
 void Renderer::setCullFace(bool enable) {
     renderState.cullFace = enable;
+#if GRAPHICS_OPENGL
     if (enable) {
         glEnable(GL_CULL_FACE);
     } else {
         glDisable(GL_CULL_FACE);
     }
+#endif
 }
 
 void Renderer::setWireframe(bool enable) {
     renderState.wireframe = enable;
+#if GRAPHICS_OPENGL
     if (enable) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+#endif
 }
 
 void Renderer::setLineWidth(float width) {
@@ -471,61 +497,71 @@ void Renderer::renderBoundingBox(const Vector3& min, const Vector3& max, const V
 }
 
 void Renderer::setupMesh(Mesh& mesh) {
+#if GRAPHICS_OPENGL
     glGenVertexArrays(1, &mesh.VAO);
     glGenBuffers(1, &mesh.VBO);
     glGenBuffers(1, &mesh.EBO);
-    
+
     glBindVertexArray(mesh.VAO);
-    
+
     glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
     glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
-    
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(unsigned int), mesh.indices.data(), GL_STATIC_DRAW);
-    
+
     // Position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(0);
-    
+
     // Normal attribute
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
     glEnableVertexAttribArray(1);
-    
+
     // Color attribute
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
     glEnableVertexAttribArray(2);
-    
+
     // Texture coordinate attribute
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(3);
-    
+
     glBindVertexArray(0);
     mesh.isInitialized = true;
+#else
+    // Mark as initialized to allow higher-level code to proceed
+    mesh.isInitialized = true;
+#endif
 }
 
 void Renderer::cleanupMesh(Mesh& mesh) {
+#if GRAPHICS_OPENGL
     if (mesh.isInitialized) {
         glDeleteVertexArrays(1, &mesh.VAO);
         glDeleteBuffers(1, &mesh.VBO);
         glDeleteBuffers(1, &mesh.EBO);
         mesh.isInitialized = false;
     }
+#else
+    mesh.isInitialized = false;
+#endif
 }
 
 void Renderer::renderMeshInternal(const Mesh& mesh) {
     if (!mesh.isInitialized) return;
-    
+#if GRAPHICS_OPENGL
     glBindVertexArray(mesh.VAO);
     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    
     trianglesRendered += mesh.indices.size() / 3;
+#else
+    (void)mesh;
+#endif
 }
 
 void Renderer::setupLighting(Shader* shader) {
     if (!shader) return;
-    
-    shader->setInt("numLights", lights.size());
+    shader->setInt("numLights", static_cast<int>(lights.size()));
     for (size_t i = 0; i < lights.size() && i < 8; i++) {
         std::string prefix = "lights[" + std::to_string(i) + "].";
         shader->setVec3(prefix + "position", lights[i].position.x, lights[i].position.y, lights[i].position.z);

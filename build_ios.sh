@@ -23,6 +23,7 @@ fi
 # Configuration
 BUILD_TYPE=${1:-Release}
 SCHEME="RacingGame3DiOS"
+ARCHS="arm64"
 
 echo "Build Type: $BUILD_TYPE"
 
@@ -37,6 +38,7 @@ echo "Generating Xcode project..."
 cmake -B build -G Xcode \
     -DCMAKE_SYSTEM_NAME=iOS \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+    -DCMAKE_OSX_ARCHITECTURES=${ARCHS} \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
 
 # Build for device
@@ -52,6 +54,7 @@ echo ""
 echo "========================================="
 echo "iOS build completed successfully!"
 echo "App bundle location: ios/build/$BUILD_TYPE-iphoneos/"
+echo "If the scheme fails to build, open the Xcode project and set Signing."
 echo ""
 echo "To install on device:"
 echo "1. Open Xcode"
