@@ -1,43 +1,43 @@
 #include "Shader.h"
+#include "Platform/PlatformDetect.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
+#if GRAPHICS_OPENGL || GRAPHICS_OPENGLES
 #include <GL/glew.h>
+#endif
 
-Shader::Shader() : programID(0) {
-}
+Shader::Shader() : programID(0) {}
 
-Shader::~Shader() {
-    cleanup();
-}
+Shader::~Shader() { cleanup(); }
+
+#if GRAPHICS_OPENGL || GRAPHICS_OPENGLES
 
 bool Shader::loadFromFiles(const std::string& vertexPath, const std::string& fragmentPath) {
     std::string vertexSource, fragmentSource;
-    
     // Read vertex shader
     std::ifstream vertexFile(vertexPath);
     if (!vertexFile.is_open()) {
         std::cerr << "Failed to open vertex shader file: " << vertexPath << std::endl;
         return false;
     }
-    
     std::stringstream vertexStream;
     vertexStream << vertexFile.rdbuf();
     vertexSource = vertexStream.str();
     vertexFile.close();
-    
+
     // Read fragment shader
     std::ifstream fragmentFile(fragmentPath);
     if (!fragmentFile.is_open()) {
         std::cerr << "Failed to open fragment shader file: " << fragmentPath << std::endl;
         return false;
     }
-    
     std::stringstream fragmentStream;
     fragmentStream << fragmentFile.rdbuf();
     fragmentSource = fragmentStream.str();
     fragmentFile.close();
-    
+
     return loadFromSource(vertexSource, fragmentSource);
 }
 
@@ -48,7 +48,6 @@ bool Shader::loadFromSource(const std::string& vertexSource, const std::string& 
         glDeleteShader(vertexShader);
         return false;
     }
-    
     // Create fragment shader
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     if (!compileShader(fragmentShader, fragmentSource)) {
@@ -56,12 +55,10 @@ bool Shader::loadFromSource(const std::string& vertexSource, const std::string& 
         glDeleteShader(fragmentShader);
         return false;
     }
-    
     // Create shader program
     programID = glCreateProgram();
     glAttachShader(programID, vertexShader);
     glAttachShader(programID, fragmentShader);
-    
     if (!linkProgram()) {
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
@@ -69,11 +66,9 @@ bool Shader::loadFromSource(const std::string& vertexSource, const std::string& 
         programID = 0;
         return false;
     }
-    
     // Clean up shaders
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    
     return true;
 }
 
@@ -81,7 +76,6 @@ bool Shader::compileShader(unsigned int shader, const std::string& source) {
     const char* sourceCStr = source.c_str();
     glShaderSource(shader, 1, &sourceCStr, nullptr);
     glCompileShader(shader);
-    
     int success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
@@ -90,13 +84,11 @@ bool Shader::compileShader(unsigned int shader, const std::string& source) {
         std::cerr << "Shader compilation failed: " << infoLog << std::endl;
         return false;
     }
-    
     return true;
 }
 
 bool Shader::linkProgram() {
     glLinkProgram(programID);
-    
     int success;
     glGetProgramiv(programID, GL_LINK_STATUS, &success);
     if (!success) {
@@ -105,7 +97,6 @@ bool Shader::linkProgram() {
         std::cerr << "Shader program linking failed: " << infoLog << std::endl;
         return false;
     }
-    
     return true;
 }
 
@@ -115,63 +106,43 @@ void Shader::use() {
     }
 }
 
-void Shader::unuse() {
-    glUseProgram(0);
-}
+void Shader::unuse() { glUseProgram(0); }
 
 void Shader::setBool(const std::string& name, bool value) {
     int location = getUniformLocation(name);
-    if (location != -1) {
-        glUniform1i(location, value ? 1 : 0);
-    }
+    if (location != -1) { glUniform1i(location, value ? 1 : 0); }
 }
 
 void Shader::setInt(const std::string& name, int value) {
     int location = getUniformLocation(name);
-    if (location != -1) {
-        glUniform1i(location, value);
-    }
+    if (location != -1) { glUniform1i(location, value); }
 }
 
 void Shader::setFloat(const std::string& name, float value) {
     int location = getUniformLocation(name);
-    if (location != -1) {
-        glUniform1f(location, value);
-    }
+    if (location != -1) { glUniform1f(location, value); }
 }
 
 void Shader::setVec3(const std::string& name, float x, float y, float z) {
     int location = getUniformLocation(name);
-    if (location != -1) {
-        glUniform3f(location, x, y, z);
-    }
+    if (location != -1) { glUniform3f(location, x, y, z); }
 }
 
 void Shader::setVec4(const std::string& name, float x, float y, float z, float w) {
     int location = getUniformLocation(name);
-    if (location != -1) {
-        glUniform4f(location, x, y, z, w);
-    }
+    if (location != -1) { glUniform4f(location, x, y, z, w); }
 }
 
 void Shader::setMat4(const std::string& name, const float* matrix) {
     int location = getUniformLocation(name);
-    if (location != -1) {
-        glUniformMatrix4fv(location, 1, GL_FALSE, matrix);
-    }
+    if (location != -1) { glUniformMatrix4fv(location, 1, GL_FALSE, matrix); }
 }
 
 int Shader::getUniformLocation(const std::string& name) {
     auto it = uniformLocations.find(name);
-    if (it != uniformLocations.end()) {
-        return it->second;
-    }
-    
+    if (it != uniformLocations.end()) { return it->second; }
     int location = glGetUniformLocation(programID, name.c_str());
-    if (location != -1) {
-        uniformLocations[name] = location;
-    }
-    
+    if (location != -1) { uniformLocations[name] = location; }
     return location;
 }
 
@@ -182,3 +153,49 @@ void Shader::cleanup() {
     }
     uniformLocations.clear();
 }
+
+#else // GRAPHICS_METAL (or other non-GL backends)
+
+bool Shader::loadFromFiles(const std::string& vertexPath, const std::string& fragmentPath) {
+    // Not used on Metal path; return false to indicate no GL shader program
+    (void)vertexPath; (void)fragmentPath;
+    programID = 0;
+    uniformLocations.clear();
+    return false;
+}
+
+bool Shader::loadFromSource(const std::string& vertexSource, const std::string& fragmentSource) {
+    (void)vertexSource; (void)fragmentSource;
+    programID = 0;
+    uniformLocations.clear();
+    return false;
+}
+
+void Shader::use() {}
+void Shader::unuse() {}
+
+void Shader::setBool(const std::string& name, bool value) {
+    (void)name; (void)value;
+}
+void Shader::setInt(const std::string& name, int value) {
+    (void)name; (void)value;
+}
+void Shader::setFloat(const std::string& name, float value) {
+    (void)name; (void)value;
+}
+void Shader::setVec3(const std::string& name, float x, float y, float z) {
+    (void)name; (void)x; (void)y; (void)z;
+}
+void Shader::setVec4(const std::string& name, float x, float y, float z, float w) {
+    (void)name; (void)x; (void)y; (void)z; (void)w;
+}
+void Shader::setMat4(const std::string& name, const float* matrix) {
+    (void)name; (void)matrix;
+}
+
+void Shader::cleanup() {
+    programID = 0;
+    uniformLocations.clear();
+}
+
+#endif
