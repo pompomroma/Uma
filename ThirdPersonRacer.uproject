@@ -1,0 +1,19 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.4",
+  "Category": "",
+  "Description": "Third person racing game prototype",
+  "Modules": [
+    {
+      "Name": "ThirdPersonRacer",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "TargetPlatforms": [
+    "IOS",
+    "Mac",
+    "Win64",
+    "Linux"
+  ]
+}
