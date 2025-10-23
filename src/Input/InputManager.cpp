@@ -388,12 +388,12 @@ Vector2 InputManager::getCameraLookInput() const {
     Vector2 input(0.0f, 0.0f);
     
 #if PLATFORM_MOBILE
-    // Mobile touch input from right joystick
+    // Mobile: prefer right-half drag delta for camera look
     if (touchInputManager) {
-        Vector2 rightDir = touchInputManager->getRightJoystickDirection();
-        float rightMag = touchInputManager->getRightJoystickMagnitude();
-        input.x = rightDir.x * rightMag * 10.0f; // Scale for camera sensitivity
-        input.y = rightDir.y * rightMag * 10.0f;
+        Vector2 drag = touchInputManager->consumeRightHalfDragDelta();
+        // Convert screen-space pixels to look delta, scaled by sensitivity
+        input.x = drag.x * 0.1f; // tune as needed or tie to settings
+        input.y = drag.y * 0.1f;
     }
 #else
     if (isMouseLookActive) {

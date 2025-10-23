@@ -11,8 +11,8 @@ TouchInputManager::TouchInputManager()
     , longPressTimeThreshold(0.5)
     , swipeDistanceThreshold(50.0f) {
     
-    leftJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f};
-    rightJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f};
+    leftJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f, false};
+    rightJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f, false};
 }
 
 TouchInputManager::~TouchInputManager() {
@@ -24,10 +24,11 @@ void TouchInputManager::initialize(float width, float height) {
     screenHeight = height;
     
     // Setup default virtual controls
-    // Left joystick for steering (bottom left)
+    // Left joystick for movement (bottom-left), dynamic spawn under thumb
     setupLeftJoystick(Vector2(150.0f, height - 150.0f), 100.0f, 40.0f);
+    leftJoystick.isDynamic = true;
     
-    // Right joystick for camera (bottom right)
+    // Keep right joystick data initialized, but camera will use right-half drag instead
     setupRightJoystick(Vector2(width - 150.0f, height - 150.0f), 80.0f, 30.0f);
     
     // Action buttons (right side)
@@ -76,8 +77,15 @@ void TouchInputManager::registerTouch(int touchId, float x, float y, TouchPhase 
     
     // Process for virtual controls
     processTouchForJoystick(touch, leftJoystick);
-    processTouchForJoystick(touch, rightJoystick);
+    // Prefer right-half free-look drag over right virtual joystick
     processTouchForButtons(touch);
+
+    // Capture camera drag on right-half if enabled
+    if (rightHalfDragEnabled && cameraDragTouchId == -1) {
+        if (x >= screenWidth * 0.5f) {
+            cameraDragTouchId = touchId;
+        }
+    }
 }
 
 void TouchInputManager::updateTouch(int touchId, float x, float y) {
@@ -91,6 +99,11 @@ void TouchInputManager::updateTouch(int touchId, float x, float y) {
         
         if (onTouchMoved) {
             onTouchMoved(touch);
+        }
+
+        // Accumulate right-half camera drag
+        if (rightHalfDragEnabled && touchId == cameraDragTouchId) {
+            rightDragDelta = rightDragDelta + touch.deltaPosition;
         }
     }
 }
@@ -119,6 +132,11 @@ void TouchInputManager::endTouch(int touchId) {
             rightJoystick.currentPosition = rightJoystick.centerPosition;
             rightJoystick.direction = Vector2(0, 0);
             rightJoystick.magnitude = 0.0f;
+        }
+
+        // Release camera drag capture
+        if (touchId == cameraDragTouchId) {
+            cameraDragTouchId = -1;
         }
         
         // Release buttons
@@ -375,10 +393,24 @@ void TouchInputManager::detectGestures() {
 
 void TouchInputManager::processTouchForJoystick(const Touch& touch, VirtualJoystick& joystick) {
     if (touch.phase == TouchPhase::Began) {
-        if (!joystick.isActive && isTouchInCircle(touch.position, joystick.centerPosition, joystick.outerRadius)) {
-            joystick.isActive = true;
-            joystick.touchId = touch.id;
-            joystick.currentPosition = touch.position;
+        if (!joystick.isActive) {
+            if (joystick.isDynamic) {
+                // Activate only if in left-bottom activation region
+                if (isInLeftBottomActivationRegion(touch.position)) {
+                    joystick.centerPosition = touch.position;
+                    joystick.isActive = true;
+                    joystick.touchId = touch.id;
+                    joystick.currentPosition = touch.position;
+                    joystick.direction = Vector2(0, 0);
+                    joystick.magnitude = 0.0f;
+                }
+            } else {
+                if (isTouchInCircle(touch.position, joystick.centerPosition, joystick.outerRadius)) {
+                    joystick.isActive = true;
+                    joystick.touchId = touch.id;
+                    joystick.currentPosition = touch.position;
+                }
+            }
         }
     }
 }
@@ -403,4 +435,15 @@ float TouchInputManager::calculateDistance(Vector2 a, Vector2 b) const {
     float dx = a.x - b.x;
     float dy = a.y - b.y;
     return std::sqrt(dx * dx + dy * dy);
+}
+
+bool TouchInputManager::isInLeftBottomActivationRegion(const Vector2& pos) const {
+    // Left half and bottom portion of the screen
+    return pos.x < (screenWidth * 0.5f) && pos.y > (screenHeight * 0.6f);
+}
+
+Vector2 TouchInputManager::consumeRightHalfDragDelta() {
+    Vector2 out = rightDragDelta;
+    rightDragDelta = Vector2(0.0f, 0.0f);
+    return out;
 }
