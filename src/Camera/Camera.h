@@ -7,6 +7,7 @@ class Camera {
 public:
     enum class CameraMode {
         ThirdPerson,
+        ThirdPersonLocked,
         FirstPerson,
         Free
     };
@@ -31,6 +32,14 @@ private:
     float followHeight;
     float followAngle;
     float mouseSensitivity;
+    
+    // Locked third person specific
+    bool isLocked;
+    Vector3 lockedOffset;  // Fixed offset from target
+    float lockedDistance;
+    float lockedHeight;
+    float lockedYaw;       // Fixed yaw angle
+    float lockedPitch;     // Fixed pitch angle
     
     // Camera smoothing
     Vector3 velocity;
@@ -74,6 +83,14 @@ public:
     void setFollowAngle(float angle);
     void setMouseSensitivity(float sensitivity);
     
+    // Locked third person camera controls
+    void setLockedMode(bool locked);
+    void setLockedOffset(const Vector3& offset);
+    void setLockedDistance(float distance);
+    void setLockedHeight(float height);
+    void setLockedAngles(float yaw, float pitch);
+    bool isLockedMode() const { return isLocked; }
+    
     // Camera movement
     void move(const Vector3& offset);
     void moveForward(float distance);
@@ -84,8 +101,10 @@ public:
     
     // Third person specific
     void updateThirdPerson(const Vector3& targetPosition, const Vector3& targetForward);
+    void updateLockedThirdPerson(const Vector3& targetPosition, const Vector3& targetForward);
     void handleMouseInput(float deltaX, float deltaY);
     void handleScrollInput(float scrollDelta);
+    void handleTouchCameraInput(float deltaX, float deltaY);
     
     // Update camera
     void update(float deltaTime);

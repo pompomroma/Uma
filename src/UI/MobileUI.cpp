@@ -47,11 +47,17 @@ void MobileUI::render() {
     // For now, it's a placeholder that shows what should be rendered
     
     if (showVirtualControls) {
-        // Render left joystick
-        renderVirtualJoystick(touchManager->getLeftJoystickState());
+        // Render left joystick (dynamic movement control)
+        const auto& leftJoystick = touchManager->getLeftJoystickState();
+        if (leftJoystick.isActive) {
+            renderVirtualJoystick(leftJoystick);
+        }
         
-        // Render right joystick
-        renderVirtualJoystick(touchManager->getRightJoystickState());
+        // Render right half screen camera control area
+        const auto& rightJoystick = touchManager->getRightJoystickState();
+        if (rightJoystick.isActive) {
+            renderVirtualJoystick(rightJoystick);
+        }
         
         // Render buttons
         for (const auto& button : touchManager->getButtons()) {
@@ -159,28 +165,30 @@ void MobileUI::layoutForPortrait() {
 void MobileUI::layoutForLandscape() {
     if (!touchManager) return;
     
-    // Landscape layout: joysticks at bottom corners, buttons on sides
+    // Landscape layout: dynamic joystick on left half, camera control on right half
     float margin = 80.0f;
     
-    // Left joystick for steering (bottom left)
-    touchManager->setupLeftJoystick(
-        Vector2(margin + 100.0f, screenHeight - margin - 100.0f),
-        100.0f, 40.0f
-    );
+    // Setup dynamic joystick for movement (appears where touched on left half)
+    touchManager->setupDynamicJoystick(80.0f, 30.0f);
     
-    // Right joystick for camera (bottom right)  
+    // Setup right half screen for camera control
     touchManager->setupRightJoystick(
-        Vector2(screenWidth - margin - 100.0f, screenHeight - margin - 100.0f),
-        80.0f, 30.0f
+        Vector2(screenWidth * 0.75f, screenHeight * 0.5f),
+        screenWidth * 0.25f, 0.0f
     );
     
-    // Clear existing buttons and add new ones in landscape positions
+    // Setup screen halves for touch detection
+    touchManager->setupScreenHalves();
+    
     // Action buttons (right side, vertically centered)
     float rightX = screenWidth - 100.0f;
     float midY = screenHeight * 0.5f;
     
-    // Note: addButton will append, so we'd need to clear first in a real implementation
-    // For now, this shows the intended layout
+    // Combat buttons for PvP mode
+    touchManager->addButton("attack1", Vector2(rightX, midY - 100.0f), 50.0f);
+    touchManager->addButton("attack2", Vector2(rightX, midY - 50.0f), 50.0f);
+    touchManager->addButton("shield", Vector2(rightX, midY), 50.0f);
+    touchManager->addButton("teleport", Vector2(rightX, midY + 50.0f), 50.0f);
 }
 
 void MobileUI::adjustForSafeArea() {

@@ -276,7 +276,41 @@ void Game::handleInput() {
     // Handle PvP input
     else if (currentState == GameState::PvPMode) {
         if (localPlayer) {
-            // Movement input (WASD)
+#if PLATFORM_MOBILE
+            // Mobile touch controls
+            if (touchInputManager) {
+                // Movement from left joystick (dynamic, smoothed)
+                Vector2 movementInput = touchInputManager->getMovementInput();
+                
+                if (movementInput.magnitude() > 0.1f) {
+                    // Convert joystick input to world movement
+                    Vector3 cameraForward = camera->getForward();
+                    Vector3 cameraRight = camera->getRight();
+                    
+                    // Remove Y component for horizontal movement
+                    cameraForward.y = 0.0f;
+                    cameraRight.y = 0.0f;
+                    cameraForward = cameraForward.normalized();
+                    cameraRight = cameraRight.normalized();
+                    
+                    Vector3 moveDir = (cameraForward * movementInput.y + cameraRight * movementInput.x) * 10.0f;
+                    localPlayer->setVelocity(moveDir);
+                } else {
+                    localPlayer->setVelocity(Vector3::zero());
+                }
+                
+                // Camera control from right half screen
+                Vector2 cameraDelta = touchInputManager->getCameraTouchDelta();
+                
+                if (cameraDelta.magnitude() > 0.1f) {
+                    // Use delta movement for more responsive camera control
+                    float sensitivity = touchInputManager->getCameraSensitivity();
+                    camera->handleTouchCameraInput(cameraDelta.x * sensitivity * 0.01f, cameraDelta.y * sensitivity * 0.01f);
+                    localPlayer->setLookDirection(camera->getForward());
+                }
+            }
+#else
+            // Desktop controls
             Vector3 moveDir = Vector3::zero();
             if (inputManager->isKeyPressed(InputManager::Key::W)) {
                 moveDir = moveDir + camera->getForward();
@@ -304,6 +338,7 @@ void Game::handleInput() {
                 camera->handleMouseInput(lookInput.x, lookInput.y);
                 localPlayer->setLookDirection(camera->getForward());
             }
+#endif
         }
     }
     // Handle racing input
@@ -391,10 +426,18 @@ void Game::setCamera(std::unique_ptr<Camera> newCamera) {
 }
 
 void Game::updateCamera(float dt) {
-    if (!camera || !playerCar) return;
+    if (!camera) return;
     
     if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
-        camera->updateThirdPerson(playerCar->getPosition(), playerCar->getForward());
+        if (playerCar) {
+            camera->updateThirdPerson(playerCar->getPosition(), playerCar->getForward());
+        }
+    } else if (camera->getMode() == Camera::CameraMode::ThirdPersonLocked) {
+        if (localPlayer) {
+            camera->updateLockedThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
+        } else if (playerCar) {
+            camera->updateLockedThirdPerson(playerCar->getPosition(), playerCar->getForward());
+        }
     } else {
         camera->update(dt);
     }
@@ -673,11 +716,17 @@ void Game::initializeTrack() {
 
 void Game::initializeCamera() {
     camera = std::make_unique<Camera>();
-    camera->setMode(Camera::CameraMode::ThirdPerson);
+    camera->setMode(Camera::CameraMode::ThirdPersonLocked);
     camera->setFollowTarget(Vector3::zero());
     camera->setFollowDistance(cameraDistance);
     camera->setFollowHeight(cameraHeight);
     camera->setMouseSensitivity(cameraSensitivity);
+    
+    // Setup locked third-person mode
+    camera->setLockedMode(true);
+    camera->setLockedDistance(15.0f);
+    camera->setLockedHeight(8.0f);
+    camera->setLockedAngles(0.0f, -20.0f);
 }
 
 void Game::initializeInput() {
@@ -775,8 +824,12 @@ void Game::initializePvPMode() {
     
     // Setup PvP camera
     if (camera && localPlayer) {
-        camera->setMode(Camera::CameraMode::ThirdPerson);
+        camera->setMode(Camera::CameraMode::ThirdPersonLocked);
         camera->setFollowTarget(localPlayer->getPosition());
+        camera->setLockedMode(true);
+        camera->setLockedDistance(15.0f);
+        camera->setLockedHeight(8.0f);
+        camera->setLockedAngles(0.0f, -20.0f);
     }
     
     // Start the match
@@ -794,7 +847,7 @@ void Game::updatePvPMode(float dt) {
     // Update camera to follow local player
     if (camera && localPlayer) {
         camera->setFollowTarget(localPlayer->getPosition());
-        camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
+        camera->updateLockedThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
     }
     
     // Check for level ups
