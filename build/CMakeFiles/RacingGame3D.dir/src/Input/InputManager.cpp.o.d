@@ -67,6 +67,7 @@ CMakeFiles/RacingGame3D.dir/src/Input/InputManager.cpp.o: \
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/specfun.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/stl_algobase.h \
@@ -100,6 +101,7 @@ CMakeFiles/RacingGame3D.dir/src/Input/InputManager.cpp.o: \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/tr1/poly_hermite.tcc \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/tr1/poly_laguerre.tcc \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/tr1/riemann_zeta.tcc \
+  /workspace/src/Input/../Platform/PlatformDetect.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/unordered_map \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/initializer_list \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/bits/unordered_map.h \
@@ -179,6 +181,7 @@ CMakeFiles/RacingGame3D.dir/src/Input/InputManager.cpp.o: \
   /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
   /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio.h \
   /usr/lib/gcc/x86_64-linux-gnu/14/../../../../include/c++/14/cerrno \
   /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \

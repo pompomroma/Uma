@@ -249,6 +249,13 @@ void Game::handleInput() {
     
     inputManager->update(deltaTime);
     
+#if PLATFORM_MOBILE
+    // Update mobile input
+    if (touchInputManager) {
+        touchInputManager->update(deltaTime);
+    }
+#endif
+    
     // Handle menu input
     if (currentState == GameState::Menu) {
         if (inputManager->isKeyJustPressed(InputManager::Key::F1)) {
@@ -275,25 +282,61 @@ void Game::handleInput() {
     }
     // Handle PvP input
     else if (currentState == GameState::PvPMode) {
-        if (localPlayer) {
-            // Movement input (WASD)
+        if (localPlayer && camera) {
+#if PLATFORM_MOBILE
+            // Mobile input handling
+            if (touchInputManager) {
+                // Handle camera drag (right half of screen)
+                if (touchInputManager->isCameraDragActive()) {
+                    Vector2 dragDelta = touchInputManager->getCameraDragDelta();
+                    camera->handleScreenDrag(dragDelta.x, dragDelta.y, screenWidth, screenHeight);
+                }
+                
+                // Handle movement joystick (left side, dynamic)
+                Vector2 moveInput = touchInputManager->getLeftJoystickDirection();
+                float moveIntensity = touchInputManager->getLeftJoystickMagnitude();
+                
+                if (moveIntensity > 0.1f) {
+                    // Convert joystick input to world movement relative to camera
+                    Vector3 cameraForward = camera->getCameraForwardHorizontal();
+                    Vector3 cameraRight = camera->getRight();
+                    cameraRight.y = 0; // Keep horizontal
+                    cameraRight = cameraRight.normalized();
+                    
+                    Vector3 moveDir = (cameraForward * moveInput.y + cameraRight * moveInput.x).normalized();
+                    moveDir = moveDir * moveIntensity * 12.0f; // Movement speed
+                    localPlayer->setVelocity(moveDir);
+                    
+                    // Set player look direction to movement direction
+                    localPlayer->setLookDirection(moveDir.normalized());
+                } else {
+                    localPlayer->setVelocity(Vector3::zero());
+                }
+            }
+#else
+            // Desktop input handling (WASD + mouse)
             Vector3 moveDir = Vector3::zero();
             if (inputManager->isKeyPressed(InputManager::Key::W)) {
-                moveDir = moveDir + camera->getForward();
+                moveDir = moveDir + camera->getCameraForwardHorizontal();
             }
             if (inputManager->isKeyPressed(InputManager::Key::S)) {
-                moveDir = moveDir - camera->getForward();
+                moveDir = moveDir - camera->getCameraForwardHorizontal();
             }
             if (inputManager->isKeyPressed(InputManager::Key::A)) {
-                moveDir = moveDir - camera->getRight();
+                Vector3 cameraRight = camera->getRight();
+                cameraRight.y = 0;
+                moveDir = moveDir - cameraRight.normalized();
             }
             if (inputManager->isKeyPressed(InputManager::Key::D)) {
-                moveDir = moveDir + camera->getRight();
+                Vector3 cameraRight = camera->getRight();
+                cameraRight.y = 0;
+                moveDir = moveDir + cameraRight.normalized();
             }
             
             if (moveDir.magnitude() > 0) {
-                moveDir = moveDir.normalized() * 10.0f;  // Movement speed
+                moveDir = moveDir.normalized() * 12.0f;  // Movement speed
                 localPlayer->setVelocity(moveDir);
+                localPlayer->setLookDirection(moveDir.normalized());
             } else {
                 localPlayer->setVelocity(Vector3::zero());
             }
@@ -302,8 +345,8 @@ void Game::handleInput() {
             Vector2 lookInput = inputManager->getCameraLookInput();
             if (lookInput.x != 0.0f || lookInput.y != 0.0f) {
                 camera->handleMouseInput(lookInput.x, lookInput.y);
-                localPlayer->setLookDirection(camera->getForward());
             }
+#endif
         }
     }
     // Handle racing input
@@ -391,10 +434,31 @@ void Game::setCamera(std::unique_ptr<Camera> newCamera) {
 }
 
 void Game::updateCamera(float dt) {
-    if (!camera || !playerCar) return;
+    if (!camera) return;
     
-    if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
-        camera->updateThirdPerson(playerCar->getPosition(), playerCar->getForward());
+    // Handle different game modes
+    if (currentState == GameState::PvPMode && localPlayer) {
+        // PvP mode - camera follows player
+        if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
+#if PLATFORM_MOBILE
+            if (camera->isCameraLockedMode()) {
+                camera->updateLockedThirdPerson(localPlayer->getPosition(), dt);
+            } else {
+                camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
+            }
+#else
+            camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
+#endif
+        } else {
+            camera->update(dt);
+        }
+    } else if (playerCar) {
+        // Racing mode - camera follows car
+        if (camera->getMode() == Camera::CameraMode::ThirdPerson) {
+            camera->updateThirdPerson(playerCar->getPosition(), playerCar->getForward());
+        } else {
+            camera->update(dt);
+        }
     } else {
         camera->update(dt);
     }
@@ -777,6 +841,12 @@ void Game::initializePvPMode() {
     if (camera && localPlayer) {
         camera->setMode(Camera::CameraMode::ThirdPerson);
         camera->setFollowTarget(localPlayer->getPosition());
+        
+#if PLATFORM_MOBILE
+        // Enable camera lock for mobile
+        camera->setCameraLocked(true);
+        camera->setVerticalAngleLimits(-60.0f, 60.0f);
+#endif
     }
     
     // Start the match
@@ -794,7 +864,16 @@ void Game::updatePvPMode(float dt) {
     // Update camera to follow local player
     if (camera && localPlayer) {
         camera->setFollowTarget(localPlayer->getPosition());
+        
+#if PLATFORM_MOBILE
+        if (camera->isCameraLockedMode()) {
+            camera->updateLockedThirdPerson(localPlayer->getPosition(), dt);
+        } else {
+            camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
+        }
+#else
         camera->updateThirdPerson(localPlayer->getPosition(), localPlayer->getLookDirection());
+#endif
     }
     
     // Check for level ups
@@ -1049,8 +1128,26 @@ void Game::renderCombatHUD() {
 #if PLATFORM_MOBILE
 // Mobile-specific implementations
 void Game::handleTouchInput(int touchId, float x, float y, int phase, float pressure) {
-    if (inputManager) {
-        inputManager->processTouchInput(touchId, x, y, phase, pressure);
+    if (touchInputManager) {
+        // Convert phase to TouchInputManager::TouchPhase
+        TouchInputManager::TouchPhase touchPhase;
+        switch (phase) {
+            case 0: touchPhase = TouchInputManager::TouchPhase::Began; break;
+            case 1: touchPhase = TouchInputManager::TouchPhase::Moved; break;
+            case 2: touchPhase = TouchInputManager::TouchPhase::Stationary; break;
+            case 3: touchPhase = TouchInputManager::TouchPhase::Ended; break;
+            case 4: touchPhase = TouchInputManager::TouchPhase::Cancelled; break;
+            default: touchPhase = TouchInputManager::TouchPhase::Ended; break;
+        }
+        
+        if (touchPhase == TouchInputManager::TouchPhase::Began) {
+            touchInputManager->registerTouch(touchId, x, y, touchPhase, pressure);
+        } else if (touchPhase == TouchInputManager::TouchPhase::Moved) {
+            touchInputManager->updateTouch(touchId, x, y);
+        } else if (touchPhase == TouchInputManager::TouchPhase::Ended || 
+                   touchPhase == TouchInputManager::TouchPhase::Cancelled) {
+            touchInputManager->endTouch(touchId);
+        }
     }
 }
 

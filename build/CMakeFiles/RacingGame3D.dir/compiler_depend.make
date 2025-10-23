@@ -3279,6 +3279,97 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
   /workspace/src/Math/Vector3.h \
   /workspace/src/World/Track.h
 
+RacingGame3D: /lib/x86_64-linux-gnu/Scrt1.o \
+  /lib/x86_64-linux-gnu/crti.o \
+  /lib/x86_64-linux-gnu/crtn.o \
+  /lib/x86_64-linux-gnu/libGL.so.1 \
+  /lib/x86_64-linux-gnu/libGLdispatch.so.0 \
+  /lib/x86_64-linux-gnu/libX11.so.6 \
+  /lib/x86_64-linux-gnu/libXau.so.6 \
+  /lib/x86_64-linux-gnu/libXdmcp.so.6 \
+  /lib/x86_64-linux-gnu/libc.so \
+  /lib/x86_64-linux-gnu/libc.so.6 \
+  /lib/x86_64-linux-gnu/libgcc_s.so.1 \
+  /lib/x86_64-linux-gnu/libm.so \
+  /lib/x86_64-linux-gnu/libm.so.6 \
+  /lib/x86_64-linux-gnu/libmvec.so.1 \
+  /lib/x86_64-linux-gnu/libxcb.so.1 \
+  /lib64/ld-linux-x86-64.so.2 \
+  /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o \
+  /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o \
+  /usr/lib/gcc/x86_64-linux-gnu/14/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/14/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/14/libstdc++.so \
+  /usr/lib/x86_64-linux-gnu/libGLEW.so \
+  /usr/lib/x86_64-linux-gnu/libGLX.so \
+  /usr/lib/x86_64-linux-gnu/libOpenGL.so \
+  /usr/lib/x86_64-linux-gnu/libc_nonshared.a \
+  /usr/lib/x86_64-linux-gnu/libglfw.so.3.4 \
+  CMakeFiles/RacingGame3D.dir/src/Camera/Camera.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Combat/CombatManager.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Combat/Player.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Combat/Projectile.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Combat/Shield.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Game.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Input/InputManager.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Math/Matrix4.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Math/Quaternion.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Math/Vector3.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Physics/Car.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Physics/PhysicsEngine.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Rendering/Renderer.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/Utils/Shader.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/World/Track.cpp.o \
+  CMakeFiles/RacingGame3D.dir/src/main.cpp.o
+
+
+CMakeFiles/RacingGame3D.dir/src/main.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Utils/Shader.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Rendering/Renderer.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Math/Vector3.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Math/Quaternion.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Game.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Combat/Shield.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Combat/Player.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Combat/CombatManager.cpp.o:
+
+CMakeFiles/RacingGame3D.dir/src/Camera/Camera.cpp.o:
+
+/usr/lib/x86_64-linux-gnu/libglfw.so.3.4:
+
+/usr/lib/x86_64-linux-gnu/libc_nonshared.a:
+
+/usr/lib/x86_64-linux-gnu/libOpenGL.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/14/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o:
+
+/usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o:
+
+/lib64/ld-linux-x86-64.so.2:
+
+/lib/x86_64-linux-gnu/libxcb.so.1:
+
+/lib/x86_64-linux-gnu/libgcc_s.so.1:
+
+/lib/x86_64-linux-gnu/libc.so:
+
+/lib/x86_64-linux-gnu/libXau.so.6:
+
+/lib/x86_64-linux-gnu/libGLdispatch.so.0:
+
+/lib/x86_64-linux-gnu/libGL.so.1:
+
+/lib/x86_64-linux-gnu/crti.o:
 
 /workspace/src/main.cpp:
 
@@ -3299,6 +3390,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 /usr/include/GL/glu.h:
 
 /usr/include/GL/glew.h:
+
+/usr/lib/x86_64-linux-gnu/libGLX.so:
 
 /workspace/src/Rendering/Renderer.cpp:
 
@@ -3325,6 +3418,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 /usr/include/c++/14/functional:
 
 /usr/include/c++/14/array:
+
+CMakeFiles/RacingGame3D.dir/src/Combat/Projectile.cpp.o:
 
 /usr/include/GL/glext.h:
 
@@ -3392,6 +3487,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 
 /usr/include/c++/14/pstl/glue_numeric_defs.h:
 
+/lib/x86_64-linux-gnu/libc.so.6:
+
 /usr/include/c++/14/pstl/glue_memory_defs.h:
 
 /usr/include/asm-generic/errno-base.h:
@@ -3435,6 +3532,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 /usr/include/c++/14/bits/stl_iterator_base_funcs.h:
 
 /usr/include/c++/14/debug/assertions.h:
+
+/lib/x86_64-linux-gnu/Scrt1.o:
 
 /usr/include/c++/14/bits/locale_classes.h:
 
@@ -3480,6 +3579,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 
 /usr/include/c++/14/iostream:
 
+CMakeFiles/RacingGame3D.dir/src/Physics/Car.cpp.o:
+
 /usr/lib/llvm-20/lib/clang/20/include/__stddef_null.h:
 
 /usr/include/c++/14/tr1/modified_bessel_func.tcc:
@@ -3520,9 +3621,13 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 
 /usr/include/c++/14/bits/shared_ptr.h:
 
+/usr/lib/gcc/x86_64-linux-gnu/14/libgcc_s.so:
+
 /usr/include/c++/14/bits/chrono.h:
 
 /usr/include/c++/14/bit:
+
+CMakeFiles/RacingGame3D.dir/src/World/Track.cpp.o:
 
 /usr/include/x86_64-linux-gnu/bits/fp-fast.h:
 
@@ -3560,6 +3665,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 
 /usr/include/c++/14/bits/erase_if.h:
 
+CMakeFiles/RacingGame3D.dir/src/Math/Matrix4.cpp.o:
+
 /usr/include/x86_64-linux-gnu/bits/types/__FILE.h:
 
 /usr/include/math.h:
@@ -3582,9 +3689,13 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/errno.h:
 
+/lib/x86_64-linux-gnu/libXdmcp.so.6:
+
 /usr/include/c++/14/cstdlib:
 
 /usr/include/x86_64-linux-gnu/bits/typesizes.h:
+
+CMakeFiles/RacingGame3D.dir/src/Input/InputManager.cpp.o:
 
 /usr/include/x86_64-linux-gnu/asm/posix_types_64.h:
 
@@ -3596,9 +3707,13 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 
 /usr/include/c++/14/tr1/beta_function.tcc:
 
+/lib/x86_64-linux-gnu/libmvec.so.1:
+
 /usr/include/stdlib.h:
 
 /workspace/src/Math/Vector3.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/14/libstdc++.so:
 
 /usr/include/c++/14/algorithm:
 
@@ -3706,9 +3821,13 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 
 /usr/include/c++/14/bits/locale_facets.h:
 
+/lib/x86_64-linux-gnu/libX11.so.6:
+
 /usr/include/c++/14/bits/streambuf.tcc:
 
 /usr/include/x86_64-linux-gnu/sys/types.h:
+
+/lib/x86_64-linux-gnu/crtn.o:
 
 /usr/include/x86_64-linux-gnu/bits/fp-logb.h:
 
@@ -3721,6 +3840,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 /usr/include/linux/errno.h:
 
 /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h:
+
+/lib/x86_64-linux-gnu/libm.so:
 
 /usr/include/c++/14/bits/std_abs.h:
 
@@ -3745,6 +3866,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 /usr/include/c++/14/bits/cxxabi_forced.h:
 
 /usr/include/stdio.h:
+
+CMakeFiles/RacingGame3D.dir/src/Physics/PhysicsEngine.cpp.o:
 
 /usr/include/GL/gl.h:
 
@@ -3793,6 +3916,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 /usr/include/x86_64-linux-gnu/bits/select.h:
 
 /usr/include/x86_64-linux-gnu/bits/time.h:
+
+/usr/lib/x86_64-linux-gnu/libGLEW.so:
 
 /usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
 
@@ -3947,6 +4072,8 @@ CMakeFiles/RacingGame3D.dir/src/main.cpp.o: /workspace/src/main.cpp \
 /usr/include/c++/14/ext/concurrence.h:
 
 /usr/include/c++/14/ext/string_conversions.h:
+
+/lib/x86_64-linux-gnu/libm.so.6:
 
 /usr/include/c++/14/iosfwd:
 
