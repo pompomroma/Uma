@@ -1,8 +1,12 @@
 #include "Shader.h"
+#include "../Platform/PlatformDetect.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <GL/glew.h>
+
+#if !PLATFORM_IOS
+    #include <GL/glew.h>
+#endif
 
 Shader::Shader() : programID(0) {
 }
@@ -42,6 +46,12 @@ bool Shader::loadFromFiles(const std::string& vertexPath, const std::string& fra
 }
 
 bool Shader::loadFromSource(const std::string& vertexSource, const std::string& fragmentSource) {
+#if PLATFORM_IOS
+    // Metal shader compilation would go here
+    // For now, just return true to allow compilation
+    programID = 1; // Dummy ID for iOS
+    return true;
+#else
     // Create vertex shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     if (!compileShader(vertexShader, vertexSource)) {
@@ -75,9 +85,14 @@ bool Shader::loadFromSource(const std::string& vertexSource, const std::string& 
     glDeleteShader(fragmentShader);
     
     return true;
+#endif
 }
 
 bool Shader::compileShader(unsigned int shader, const std::string& source) {
+#if PLATFORM_IOS
+    // Metal shader compilation would go here
+    return true;
+#else
     const char* sourceCStr = source.c_str();
     glShaderSource(shader, 1, &sourceCStr, nullptr);
     glCompileShader(shader);
@@ -92,9 +107,14 @@ bool Shader::compileShader(unsigned int shader, const std::string& source) {
     }
     
     return true;
+#endif
 }
 
 bool Shader::linkProgram() {
+#if PLATFORM_IOS
+    // Metal program linking would go here
+    return true;
+#else
     glLinkProgram(programID);
     
     int success;
@@ -107,61 +127,82 @@ bool Shader::linkProgram() {
     }
     
     return true;
+#endif
 }
 
 void Shader::use() {
+#if !PLATFORM_IOS
     if (programID != 0) {
         glUseProgram(programID);
     }
+#endif
 }
 
 void Shader::unuse() {
+#if !PLATFORM_IOS
     glUseProgram(0);
+#endif
 }
 
 void Shader::setBool(const std::string& name, bool value) {
+#if !PLATFORM_IOS
     int location = getUniformLocation(name);
     if (location != -1) {
         glUniform1i(location, value ? 1 : 0);
     }
+#endif
 }
 
 void Shader::setInt(const std::string& name, int value) {
+#if !PLATFORM_IOS
     int location = getUniformLocation(name);
     if (location != -1) {
         glUniform1i(location, value);
     }
+#endif
 }
 
 void Shader::setFloat(const std::string& name, float value) {
+#if !PLATFORM_IOS
     int location = getUniformLocation(name);
     if (location != -1) {
         glUniform1f(location, value);
     }
+#endif
 }
 
 void Shader::setVec3(const std::string& name, float x, float y, float z) {
+#if !PLATFORM_IOS
     int location = getUniformLocation(name);
     if (location != -1) {
         glUniform3f(location, x, y, z);
     }
+#endif
 }
 
 void Shader::setVec4(const std::string& name, float x, float y, float z, float w) {
+#if !PLATFORM_IOS
     int location = getUniformLocation(name);
     if (location != -1) {
         glUniform4f(location, x, y, z, w);
     }
+#endif
 }
 
 void Shader::setMat4(const std::string& name, const float* matrix) {
+#if !PLATFORM_IOS
     int location = getUniformLocation(name);
     if (location != -1) {
         glUniformMatrix4fv(location, 1, GL_FALSE, matrix);
     }
+#endif
 }
 
 int Shader::getUniformLocation(const std::string& name) {
+#if PLATFORM_IOS
+    // Metal uniform location would go here
+    return -1;
+#else
     auto it = uniformLocations.find(name);
     if (it != uniformLocations.end()) {
         return it->second;
@@ -173,11 +214,14 @@ int Shader::getUniformLocation(const std::string& name) {
     }
     
     return location;
+#endif
 }
 
 void Shader::cleanup() {
     if (programID != 0) {
+#if !PLATFORM_IOS
         glDeleteProgram(programID);
+#endif
         programID = 0;
     }
     uniformLocations.clear();
