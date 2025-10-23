@@ -106,6 +106,30 @@ void Camera::setMouseSensitivity(float sensitivity) {
     mouseSensitivity = std::max(0.1f, sensitivity);
 }
 
+void Camera::setLockedMode(bool locked) {
+    isLocked = locked;
+    if (locked) {
+        mode = CameraMode::ThirdPersonLocked;
+    }
+}
+
+void Camera::setLockedOffset(const Vector3& offset) {
+    lockedOffset = offset;
+}
+
+void Camera::setLockedDistance(float distance) {
+    lockedDistance = std::max(1.0f, distance);
+}
+
+void Camera::setLockedHeight(float height) {
+    lockedHeight = height;
+}
+
+void Camera::setLockedAngles(float yaw, float pitch) {
+    lockedYaw = yaw;
+    lockedPitch = std::clamp(pitch, -89.0f, 89.0f);
+}
+
 void Camera::move(const Vector3& offset) {
     position += offset;
     target += offset;
@@ -179,11 +203,65 @@ void Camera::updateThirdPerson(const Vector3& targetPosition, const Vector3& tar
     updateVectors();
 }
 
+void Camera::updateLockedThirdPerson(const Vector3& targetPosition, const Vector3& targetForward) {
+    if (mode != CameraMode::ThirdPersonLocked) return;
+    
+    // Calculate camera position based on locked angles and target's orientation
+    Vector3 targetRight = targetForward.cross(Vector3::up()).normalized();
+    Vector3 targetUp = targetRight.cross(targetForward).normalized();
+    
+    // Apply locked yaw and pitch
+    float yawRad = lockedYaw * M_PI / 180.0f;
+    float pitchRad = lockedPitch * M_PI / 180.0f;
+    
+    // Calculate offset from target
+    Vector3 offset = targetRight * std::sin(yawRad) * lockedDistance +
+                    targetUp * lockedHeight +
+                    targetForward * std::cos(yawRad) * lockedDistance;
+    
+    // Apply pitch offset
+    Vector3 pitchOffset = targetUp * std::sin(pitchRad) * lockedDistance;
+    offset += pitchOffset;
+    
+    // Set camera position
+    Vector3 desiredPosition = targetPosition + offset + lockedOffset;
+    
+    // Smooth camera movement
+    Vector3 direction = desiredPosition - position;
+    float distance = direction.length();
+    
+    if (distance > 0.01f) {
+        velocity = direction.normalized() * std::min(distance * smoothSpeed, distance);
+        position += velocity;
+    }
+    
+    // Always look at the target
+    target = targetPosition;
+    updateVectors();
+}
+
 void Camera::handleMouseInput(float deltaX, float deltaY) {
     if (!isMouseLookActive) return;
     
     float sensitivity = mouseSensitivity * 0.1f;
     rotate(deltaX * sensitivity, -deltaY * sensitivity);
+}
+
+void Camera::handleTouchCameraInput(float deltaX, float deltaY) {
+    if (mode != CameraMode::ThirdPersonLocked) return;
+    
+    float sensitivity = mouseSensitivity * 0.2f;
+    
+    // Update locked angles based on touch input
+    lockedYaw += deltaX * sensitivity;
+    lockedPitch += -deltaY * sensitivity;  // Invert Y for touch
+    
+    // Clamp pitch to prevent camera flipping
+    lockedPitch = std::clamp(lockedPitch, -89.0f, 89.0f);
+    
+    // Normalize yaw
+    while (lockedYaw > 360.0f) lockedYaw -= 360.0f;
+    while (lockedYaw < 0.0f) lockedYaw += 360.0f;
 }
 
 void Camera::handleScrollInput(float scrollDelta) {
@@ -195,8 +273,8 @@ void Camera::handleScrollInput(float scrollDelta) {
 }
 
 void Camera::update(float deltaTime) {
-    if (mode == CameraMode::ThirdPerson) {
-        // Third person camera updates are handled by updateThirdPerson
+    if (mode == CameraMode::ThirdPerson || mode == CameraMode::ThirdPersonLocked) {
+        // Third person camera updates are handled by updateThirdPerson or updateLockedThirdPerson
         return;
     }
     

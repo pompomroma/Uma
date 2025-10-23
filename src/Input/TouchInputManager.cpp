@@ -1,18 +1,24 @@
 #include "TouchInputManager.h"
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 TouchInputManager::TouchInputManager()
     : screenWidth(1920.0f)
     , screenHeight(1080.0f)
     , touchSensitivity(1.0f)
     , joystickDeadzone(0.15f)
+    , cameraSensitivity(2.0f)
     , doubleTapTimeThreshold(0.3)
     , longPressTimeThreshold(0.5)
     , swipeDistanceThreshold(50.0f) {
     
-    leftJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f};
-    rightJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f};
+    leftJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f, true};
+    rightJoystick = {Vector2(0, 0), Vector2(0, 0), 100.0f, 40.0f, false, -1, Vector2(0, 0), 0.0f, false};
+    lastCameraTouchPosition = Vector2(0, 0);
+    cameraTouchDelta = Vector2(0, 0);
+    smoothedMovementInput = Vector2(0, 0);
+    movementSmoothingFactor = 0.1f;
 }
 
 TouchInputManager::~TouchInputManager() {
@@ -23,12 +29,19 @@ void TouchInputManager::initialize(float width, float height) {
     screenWidth = width;
     screenHeight = height;
     
-    // Setup default virtual controls
-    // Left joystick for steering (bottom left)
-    setupLeftJoystick(Vector2(150.0f, height - 150.0f), 100.0f, 40.0f);
+    // Setup screen halves
+    setupScreenHalves();
     
-    // Right joystick for camera (bottom right)
-    setupRightJoystick(Vector2(width - 150.0f, height - 150.0f), 80.0f, 30.0f);
+    // Setup default virtual controls
+    // Left joystick for movement (dynamic, appears where touched)
+    setupDynamicJoystick(80.0f, 30.0f);
+    
+    // Right half screen for camera control (large area covering right half)
+    setupRightJoystick(Vector2(width * 0.75f, height * 0.5f), width * 0.5f, 0.0f);
+    
+    // Set sensitivity and smoothing
+    setCameraSensitivity(2.0f);
+    setMovementSmoothing(0.1f);
     
     // Action buttons (right side)
     addButton("accelerate", Vector2(width - 100.0f, height - 400.0f), 60.0f);
@@ -56,6 +69,22 @@ void TouchInputManager::shutdown() {
 void TouchInputManager::update(float deltaTime) {
     updateVirtualControls();
     detectGestures();
+    
+    // Smooth movement input
+    Vector2 targetMovement = leftJoystick.direction * leftJoystick.magnitude;
+    smoothedMovementInput = smoothedMovementInput + (targetMovement - smoothedMovementInput) * movementSmoothingFactor;
+    
+    // Apply deadzone to smoothed movement
+    if (smoothedMovementInput.magnitude() < joystickDeadzone) {
+        smoothedMovementInput = Vector2(0, 0);
+    } else {
+        // Normalize after deadzone
+        float magnitude = smoothedMovementInput.magnitude();
+        smoothedMovementInput = smoothedMovementInput.normalized() * std::min(1.0f, (magnitude - joystickDeadzone) / (1.0f - joystickDeadzone));
+    }
+    
+    // Reset camera delta
+    cameraTouchDelta = Vector2(0, 0);
 }
 
 void TouchInputManager::registerTouch(int touchId, float x, float y, TouchPhase phase, float pressure) {
@@ -88,6 +117,12 @@ void TouchInputManager::updateTouch(int touchId, float x, float y) {
         touch.position = Vector2(x, y);
         touch.deltaPosition = touch.position - touch.previousPosition;
         touch.phase = TouchPhase::Moved;
+        
+        // Track camera touch delta for right half screen
+        if (rightJoystick.isActive && rightJoystick.touchId == touchId) {
+            cameraTouchDelta = touch.deltaPosition;
+            lastCameraTouchPosition = touch.position;
+        }
         
         if (onTouchMoved) {
             onTouchMoved(touch);
@@ -182,6 +217,24 @@ void TouchInputManager::setupRightJoystick(Vector2 center, float outerRadius, fl
     rightJoystick.touchId = -1;
     rightJoystick.direction = Vector2(0, 0);
     rightJoystick.magnitude = 0.0f;
+    rightJoystick.isDynamic = false;
+}
+
+void TouchInputManager::setupDynamicJoystick(float outerRadius, float innerRadius) {
+    leftJoystick.outerRadius = outerRadius;
+    leftJoystick.innerRadius = innerRadius;
+    leftJoystick.isActive = false;
+    leftJoystick.touchId = -1;
+    leftJoystick.direction = Vector2(0, 0);
+    leftJoystick.magnitude = 0.0f;
+    leftJoystick.isDynamic = true;
+}
+
+void TouchInputManager::setupScreenHalves() {
+    leftHalfStart = Vector2(0, 0);
+    leftHalfEnd = Vector2(screenWidth * 0.5f, screenHeight);
+    rightHalfStart = Vector2(screenWidth * 0.5f, 0);
+    rightHalfEnd = Vector2(screenWidth, screenHeight);
 }
 
 void TouchInputManager::addButton(const std::string& label, Vector2 position, float radius) {
@@ -217,6 +270,22 @@ Vector2 TouchInputManager::getRightJoystickDirection() const {
 
 float TouchInputManager::getRightJoystickMagnitude() const {
     return rightJoystick.magnitude;
+}
+
+Vector2 TouchInputManager::getCameraTouchDirection() const {
+    return rightJoystick.direction;
+}
+
+float TouchInputManager::getCameraTouchMagnitude() const {
+    return rightJoystick.magnitude;
+}
+
+Vector2 TouchInputManager::getCameraTouchDelta() const {
+    return cameraTouchDelta;
+}
+
+Vector2 TouchInputManager::getMovementInput() const {
+    return smoothedMovementInput;
 }
 
 bool TouchInputManager::isButtonPressed(const std::string& label) const {
@@ -275,6 +344,14 @@ void TouchInputManager::setTouchSensitivity(float sensitivity) {
 
 void TouchInputManager::setJoystickDeadzone(float deadzone) {
     joystickDeadzone = deadzone;
+}
+
+void TouchInputManager::setCameraSensitivity(float sensitivity) {
+    cameraSensitivity = std::max(0.1f, sensitivity);
+}
+
+void TouchInputManager::setMovementSmoothing(float factor) {
+    movementSmoothingFactor = std::clamp(factor, 0.01f, 1.0f);
 }
 
 void TouchInputManager::setTouchBeganCallback(std::function<void(const Touch&)> callback) {
@@ -375,10 +452,28 @@ void TouchInputManager::detectGestures() {
 
 void TouchInputManager::processTouchForJoystick(const Touch& touch, VirtualJoystick& joystick) {
     if (touch.phase == TouchPhase::Began) {
-        if (!joystick.isActive && isTouchInCircle(touch.position, joystick.centerPosition, joystick.outerRadius)) {
-            joystick.isActive = true;
-            joystick.touchId = touch.id;
-            joystick.currentPosition = touch.position;
+        if (!joystick.isActive) {
+            bool shouldActivate = false;
+            
+            if (joystick.isDynamic) {
+                // Dynamic joystick - check if touch is in left half of screen
+                if (isTouchInLeftHalf(touch.position)) {
+                    joystick.centerPosition = touch.position;
+                    joystick.currentPosition = touch.position;
+                    shouldActivate = true;
+                }
+            } else {
+                // Fixed joystick - check if touch is in right half of screen for camera control
+                if (isTouchInRightHalf(touch.position)) {
+                    shouldActivate = true;
+                }
+            }
+            
+            if (shouldActivate) {
+                joystick.isActive = true;
+                joystick.touchId = touch.id;
+                joystick.currentPosition = touch.position;
+            }
         }
     }
 }
@@ -397,6 +492,16 @@ void TouchInputManager::processTouchForButtons(const Touch& touch) {
 
 bool TouchInputManager::isTouchInCircle(Vector2 touchPos, Vector2 center, float radius) const {
     return calculateDistance(touchPos, center) <= radius;
+}
+
+bool TouchInputManager::isTouchInRightHalf(Vector2 touchPos) const {
+    return touchPos.x >= rightHalfStart.x && touchPos.x <= rightHalfEnd.x &&
+           touchPos.y >= rightHalfStart.y && touchPos.y <= rightHalfEnd.y;
+}
+
+bool TouchInputManager::isTouchInLeftHalf(Vector2 touchPos) const {
+    return touchPos.x >= leftHalfStart.x && touchPos.x <= leftHalfEnd.x &&
+           touchPos.y >= leftHalfStart.y && touchPos.y <= leftHalfEnd.y;
 }
 
 float TouchInputManager::calculateDistance(Vector2 a, Vector2 b) const {

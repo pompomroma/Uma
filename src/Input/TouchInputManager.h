@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <string>
 
 // Mobile touch input manager for Android and iOS
 class TouchInputManager {
@@ -35,6 +36,7 @@ public:
         int touchId;
         Vector2 direction;
         float magnitude;
+        bool isDynamic;  // For dynamic joystick that appears where touched
     };
 
     struct VirtualButton {
@@ -69,9 +71,23 @@ private:
     std::vector<Gesture> currentGestures;
     
     // Virtual controls
-    VirtualJoystick leftJoystick;   // For movement/steering
-    VirtualJoystick rightJoystick;  // For camera control
+    VirtualJoystick leftJoystick;   // For movement/steering (dynamic)
+    VirtualJoystick rightJoystick;  // For camera control (right half screen)
     std::vector<VirtualButton> buttons;
+    
+    // Camera touch tracking
+    Vector2 lastCameraTouchPosition;
+    Vector2 cameraTouchDelta;
+    
+    // Movement smoothing
+    Vector2 smoothedMovementInput;
+    float movementSmoothingFactor;
+    
+    // Touch areas
+    Vector2 rightHalfStart;  // Right half screen for camera control
+    Vector2 rightHalfEnd;
+    Vector2 leftHalfStart;   // Left half screen for movement joystick
+    Vector2 leftHalfEnd;
     
     // Screen dimensions
     float screenWidth;
@@ -80,6 +96,7 @@ private:
     // Touch sensitivity
     float touchSensitivity;
     float joystickDeadzone;
+    float cameraSensitivity;
     
     // Gesture detection
     double doubleTapTimeThreshold;
@@ -118,6 +135,8 @@ public:
     // Virtual joystick setup
     void setupLeftJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f);
     void setupRightJoystick(Vector2 center, float outerRadius = 100.0f, float innerRadius = 40.0f);
+    void setupDynamicJoystick(float outerRadius = 80.0f, float innerRadius = 30.0f);
+    void setupScreenHalves();
     
     // Virtual button setup
     void addButton(const std::string& label, Vector2 position, float radius = 50.0f);
@@ -126,8 +145,14 @@ public:
     // Virtual control queries
     Vector2 getLeftJoystickDirection() const;
     float getLeftJoystickMagnitude() const;
+    Vector2 getMovementInput() const;
+    void setMovementSmoothing(float factor);  // Smoothed movement input
     Vector2 getRightJoystickDirection() const;
     float getRightJoystickMagnitude() const;
+    Vector2 getCameraTouchDirection() const;  // For right half screen camera control
+    float getCameraTouchMagnitude() const;
+    Vector2 getCameraTouchDelta() const;  // Raw delta movement for camera
+    float getCameraSensitivity() const { return cameraSensitivity; }
     bool isButtonPressed(const std::string& label) const;
     bool isButtonJustPressed(const std::string& label) const;
     bool isButtonJustReleased(const std::string& label) const;
@@ -141,6 +166,7 @@ public:
     void setScreenSize(float width, float height);
     void setTouchSensitivity(float sensitivity);
     void setJoystickDeadzone(float deadzone);
+    void setCameraSensitivity(float sensitivity);
     
     // Callbacks
     void setTouchBeganCallback(std::function<void(const Touch&)> callback);
@@ -161,5 +187,7 @@ private:
     void processTouchForJoystick(const Touch& touch, VirtualJoystick& joystick);
     void processTouchForButtons(const Touch& touch);
     bool isTouchInCircle(Vector2 touchPos, Vector2 center, float radius) const;
+    bool isTouchInRightHalf(Vector2 touchPos) const;
+    bool isTouchInLeftHalf(Vector2 touchPos) const;
     float calculateDistance(Vector2 a, Vector2 b) const;
 };
