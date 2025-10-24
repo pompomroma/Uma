@@ -1,8 +1,15 @@
 cmake_minimum_required(VERSION 3.18)
-project(RacingGame3DiOS)
+# Enable Objective-C and Objective-C++ explicitly to ensure .mm files configure on macOS
+project(RacingGame3DiOS LANGUAGES C CXX OBJC OBJCXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_OBJCXX_STANDARD 17)
+set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
+
+# Required when using .m/.mm sources with some CMake versions
+enable_language(OBJC)
+enable_language(OBJCXX)
 
 # iOS specific settings
 set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum iOS deployment version")
