@@ -22,6 +22,7 @@ cd /path/to/RacingGame3D
 ```bash
 open ios/build/RacingGame3DiOS.xcodeproj
 ```
+**Note**: If you built this on a non-macOS system, transfer the entire project folder to a Mac first, then open the `.xcodeproj` file in Xcode.
 
 ### 3️⃣ Configure Signing
 - Xcode → Preferences → Accounts → Add your Apple ID
@@ -49,6 +50,9 @@ open ios/build/RacingGame3DiOS.xcodeproj
 
 ## 🔧 Troubleshooting
 
+**"Xcode project not found" or "No such file"**
+→ Make sure you ran `./build_ios.sh` first to generate the project files
+
 **"Untrusted Developer"**
 → Settings → General → VPN & Device Management → Trust
 
@@ -57,6 +61,9 @@ open ios/build/RacingGame3DiOS.xcodeproj
 
 **App expires after 7 days**
 → Normal with free Apple ID, just rebuild and reinstall
+
+**Built on non-macOS system**
+→ Transfer the entire project folder to a Mac, then open the `.xcodeproj` file in Xcode
 
 ---
 
