@@ -1,0 +1,4 @@
+This is a placeholder created on a non-macOS environment.
+
+To generate a real Xcode project, run this script on a Mac with Xcode and CMake installed.
+Expected location on macOS: ios/build/RacingGame3DiOS.xcodeproj

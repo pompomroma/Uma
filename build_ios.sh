@@ -41,6 +41,8 @@ cd ios
 
 # Generate Xcode project with CMake
 echo "Generating Xcode project..."
+# On macOS we can generate an actual Xcode project. On non-macOS we still
+# generate into ios/build, but only for reference and without iOS SDKs.
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # Use Xcode generator on macOS
     cmake -B build -G Xcode \
@@ -51,18 +53,22 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         -DPLATFORM_IOS=1 \
         -DPLATFORM_MOBILE=1
 else
-    # Use Unix Makefiles generator on non-macOS (for reference only)
-    cmake -B build -G "Unix Makefiles" \
-        -DCMAKE_SYSTEM_NAME=iOS \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
-        -DCMAKE_OSX_ARCHITECTURES=arm64 \
-        -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
-        -DPLATFORM_IOS=1 \
-        -DPLATFORM_MOBILE=1 \
-        2>&1 | head -20
+    # On non-macOS, ensure the output path exists and place a helpful
+    # placeholder so instructions don't point to a missing file.
+    mkdir -p build
+    PLACEHOLDER="build/RacingGame3DiOS.xcodeproj"
+    if [[ ! -d "$PLACEHOLDER" ]]; then
+        mkdir -p "$PLACEHOLDER"
+        cat > "$PLACEHOLDER/READ_THIS_FIRST.txt" <<EOF
+This is a placeholder created on a non-macOS environment.
+
+To generate a real Xcode project, run this script on a Mac with Xcode and CMake installed.
+Expected location on macOS: ios/build/RacingGame3DiOS.xcodeproj
+EOF
+    fi
     echo ""
-    echo "Note: Cross-compilation to iOS from non-macOS is not fully supported."
-    echo "The project files have been generated for reference."
+    echo "Note: Cross-compilation to iOS from non-macOS is not supported."
+    echo "A placeholder has been created at ios/$PLACEHOLDER to guide you."
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -99,13 +105,11 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 else
     echo ""
     echo "========================================="
-    echo "Xcode project generated successfully!"
-    echo "Project location: ios/build/RacingGame3DiOS.xcodeproj"
+    echo "Xcode project placeholder prepared."
+    echo "When run on macOS, the real project will be created at:"
+    echo "ios/build/RacingGame3DiOS.xcodeproj"
     echo ""
-    echo "Transfer this project to a Mac to build and install:"
-    echo "1. Copy the entire project folder to a Mac"
-    echo "2. Run this script on the Mac to build"
-    echo "3. Or open ios/build/RacingGame3DiOS.xcodeproj in Xcode"
+    echo "Transfer this project to a Mac and run this script again to build."
     echo "========================================="
 fi
 
