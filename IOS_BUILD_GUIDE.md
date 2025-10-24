@@ -28,13 +28,18 @@ This guide will help you build and install the Racing Game 3D on your iPhone.
 
 ## Step 1: Transfer Project to Mac
 
-If you're working on this project in a cloud environment (like GitHub Codespaces):
+**⚠️ IMPORTANT**: iOS apps can **only** be built on macOS with Xcode. The Xcode project file (`.xcodeproj`) cannot be generated on Linux or Windows.
+
+If you're working on this project in a cloud environment or non-Mac computer:
 
 1. **Download the entire project** from your repository
 2. **Transfer to your Mac** via:
    - Git clone on your Mac: `git clone [your-repo-url]`
    - Direct download and copy
    - Cloud storage (iCloud, Dropbox, etc.)
+   - Network transfer: `scp -r project-folder user@mac:~/`
+
+**Note**: If you run `./build_ios.sh` on Linux/Windows, it will prepare the project files and provide instructions for building on macOS, but it cannot generate the actual Xcode project.
 
 ---
 

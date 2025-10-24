@@ -3,10 +3,12 @@
 ## 🎮 Get Your Game on iPhone in 5 Steps!
 
 ### ✅ Prerequisites
-- Mac computer with Xcode installed
+- **Mac computer with Xcode installed** (iOS builds only work on macOS)
 - iPhone with iOS 13.0+
 - USB cable
 - Free Apple ID
+
+**⚠️ Note**: If you're on Linux/Windows, see `IOS_BUILD_GUIDE.md` for instructions on transferring the project to a Mac first.
 
 ---
 
