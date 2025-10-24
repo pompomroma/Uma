@@ -1,8 +1,15 @@
 #include "Renderer.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "../Platform/PlatformDetect.h"
 #include <iostream>
 #include <cmath>
+
+#if PLATFORM_IOS
+    // Metal includes for iOS - actual Metal rendering would go here
+    // For now, we'll use stubs to allow compilation
+#else
+    #include <GL/glew.h>
+    #include <GLFW/glfw3.h>
+#endif
 
 Renderer::Renderer() 
     : screenWidth(1920)
@@ -35,6 +42,11 @@ bool Renderer::initialize(int width, int height) {
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
     
+#if PLATFORM_IOS
+    // Metal initialization would go here
+    // For now, just set up basic state
+    std::cout << "Renderer: iOS/Metal mode (stub)" << std::endl;
+#else
     // Initialize OpenGL
     GLenum err = glewInit();
     if (err != GLEW_OK) {
@@ -48,6 +60,7 @@ bool Renderer::initialize(int width, int height) {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+#endif
     
     // Load shaders
     loadShaders();
@@ -76,8 +89,11 @@ void Renderer::shutdown() {
 
 void Renderer::beginFrame() {
     resetStats();
+#if !PLATFORM_IOS
     glClearColor(renderState.clearColor.x, renderState.clearColor.y, renderState.clearColor.z, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
+    // Metal frame begin would go here for iOS
 }
 
 void Renderer::endFrame() {
@@ -85,11 +101,15 @@ void Renderer::endFrame() {
 }
 
 void Renderer::clear() {
+#if !PLATFORM_IOS
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
 }
 
 void Renderer::setViewport(int x, int y, int width, int height) {
+#if !PLATFORM_IOS
     glViewport(x, y, width, height);
+#endif
     screenWidth = width;
     screenHeight = height;
     aspectRatio = (float)width / (float)height;
@@ -192,13 +212,17 @@ void Renderer::renderPlane(const Vector3& position, const Vector3& normal, float
 
 void Renderer::renderLine(const Vector3& start, const Vector3& end, const Vector3& color) {
     // Line rendering implementation
+#if !PLATFORM_IOS
     glLineWidth(renderState.lineWidth);
+#endif
     // ... line rendering code
 }
 
 void Renderer::renderGrid(int size, float spacing, const Vector3& color) {
     // Grid rendering implementation
+#if !PLATFORM_IOS
     glLineWidth(renderState.lineWidth);
+#endif
     // ... grid rendering code
 }
 
@@ -226,29 +250,35 @@ void Renderer::setClearColor(const Vector3& color) {
 
 void Renderer::setDepthTest(bool enable) {
     renderState.depthTest = enable;
+#if !PLATFORM_IOS
     if (enable) {
         glEnable(GL_DEPTH_TEST);
     } else {
         glDisable(GL_DEPTH_TEST);
     }
+#endif
 }
 
 void Renderer::setCullFace(bool enable) {
     renderState.cullFace = enable;
+#if !PLATFORM_IOS
     if (enable) {
         glEnable(GL_CULL_FACE);
     } else {
         glDisable(GL_CULL_FACE);
     }
+#endif
 }
 
 void Renderer::setWireframe(bool enable) {
     renderState.wireframe = enable;
+#if !PLATFORM_IOS
     if (enable) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+#endif
 }
 
 void Renderer::setLineWidth(float width) {
@@ -471,6 +501,10 @@ void Renderer::renderBoundingBox(const Vector3& min, const Vector3& max, const V
 }
 
 void Renderer::setupMesh(Mesh& mesh) {
+#if PLATFORM_IOS
+    // Metal mesh setup would go here
+    mesh.isInitialized = true;
+#else
     glGenVertexArrays(1, &mesh.VAO);
     glGenBuffers(1, &mesh.VBO);
     glGenBuffers(1, &mesh.EBO);
@@ -501,13 +535,16 @@ void Renderer::setupMesh(Mesh& mesh) {
     
     glBindVertexArray(0);
     mesh.isInitialized = true;
+#endif
 }
 
 void Renderer::cleanupMesh(Mesh& mesh) {
     if (mesh.isInitialized) {
+#if !PLATFORM_IOS
         glDeleteVertexArrays(1, &mesh.VAO);
         glDeleteBuffers(1, &mesh.VBO);
         glDeleteBuffers(1, &mesh.EBO);
+#endif
         mesh.isInitialized = false;
     }
 }
@@ -515,9 +552,13 @@ void Renderer::cleanupMesh(Mesh& mesh) {
 void Renderer::renderMeshInternal(const Mesh& mesh) {
     if (!mesh.isInitialized) return;
     
+#if PLATFORM_IOS
+    // Metal draw calls would go here
+#else
     glBindVertexArray(mesh.VAO);
     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+#endif
     
     trianglesRendered += mesh.indices.size() / 3;
 }
