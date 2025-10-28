@@ -1,0 +1,38 @@
+name: iOS Build (UE5)
+
+on:
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: Build configuration
+        required: false
+        default: Shipping
+  push:
+    branches:
+      - main
+      - release/**
+
+jobs:
+  build:
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Ensure scripts are executable
+        run: chmod +x Scripts/*.sh
+
+      - name: Build iOS (UE5)
+        env:
+          UE5_ROOT: ${{ env.UE5_ROOT }}
+        run: |
+          ./Scripts/build_ios.sh "${{ github.event.inputs.configuration || 'Shipping' }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-archive
+          path: Build/IOS
