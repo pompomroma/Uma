@@ -14,8 +14,11 @@
 
 ### 1️⃣ On Mac Terminal
 ```bash
-cd /path/to/RacingGame3D
-./build_ios.sh
+cd /path/to/RacingGame3D   # navigate to the repo root
+bash ./build_ios.sh        # generates Xcode project and builds
+
+# Optional: archive and try to auto-install to a connected iPhone
+bash ./build_ios.sh --install
 ```
 
 ### 2️⃣ Open Xcode
@@ -23,6 +26,12 @@ cd /path/to/RacingGame3D
 open ios/build/RacingGame3DiOS.xcodeproj
 ```
 **Note**: If you built this on a non-macOS system, transfer the entire project folder to a Mac first, then open the `.xcodeproj` file in Xcode.
+
+If you accidentally ran desktop build steps and ended up inside `build/`, you'll see `./build_ios.sh: No such file or directory`. Fix by running:
+```bash
+cd ..              # go back to repo root
+bash ./build_ios.sh
+```
 
 ### 3️⃣ Configure Signing
 - Xcode → Preferences → Accounts → Add your Apple ID

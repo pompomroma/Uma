@@ -87,14 +87,19 @@ The game now builds and runs on iPhone with full feature parity!
 **Prerequisites**: Mac with Xcode, iPhone with iOS 13.0+
 
 ```bash
-# 1. Run build script
-./build_ios.sh
+# 1) From the repository root (important!)
+bash ./build_ios.sh          # generates an Xcode project and builds
 
-# 2. Open in Xcode
+# 2) Optional: auto-archive and try to install to a connected device
+bash ./build_ios.sh --install
+
+# 3) Open the generated project in Xcode if you prefer manual install
 open ios/build/RacingGame3DiOS.xcodeproj
 
-# 3. Connect iPhone, select device, and click Run (⌘R)
+# 4) Connect iPhone, select device, choose your Team, and press ⌘R
 ```
+
+Tip: If you are inside the `build/` folder and see “No such file or directory” for `./build_ios.sh`, run `../build_ios.sh` instead or go back to the repo root with `cd ..`.
 
 #### 📚 Documentation
 - **[QUICKSTART_IOS.md](QUICKSTART_IOS.md)** - Fast 5-step guide

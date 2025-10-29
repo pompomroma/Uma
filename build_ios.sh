@@ -2,66 +2,77 @@
 
 # iOS build script for Racing Game 3D Mobile
 
-set -e
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+REPO_ROOT="$SCRIPT_DIR"
+IOS_DIR="$REPO_ROOT/ios"
+BUILD_DIR="$IOS_DIR/build"
+DIST_DIR="$IOS_DIR/dist"
+
+SCHEME="RacingGame3DiOS"
+BUILD_TYPE="Release"
+DO_INSTALL=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --debug)
+      BUILD_TYPE="Debug"; shift ;;
+    --release)
+      BUILD_TYPE="Release"; shift ;;
+    --install)
+      DO_INSTALL=true; shift ;;
+    *)
+      # Keep compatibility with old usage: first arg as build type
+      if [[ "$1" == "Debug" || "$1" == "Release" ]]; then
+        BUILD_TYPE="$1"; shift
+      else
+        echo "Unknown option: $1"; echo "Usage: ./build_ios.sh [--debug|--release] [--install]"; exit 2
+      fi
+      ;;
+  esac
+done
 
 echo "========================================="
-echo "Building Racing Game 3D for iOS"
+echo "Building Racing Game 3D for iOS ($BUILD_TYPE)"
+echo "Repo: $REPO_ROOT"
 echo "========================================="
 
 # Check if running on macOS
-if [[ "$OSTYPE" != "darwin"* ]]; then
-    echo "Warning: iOS builds should be performed on macOS"
-    echo "Generating Xcode project anyway for reference..."
+if [[ "$OSTYPE" != darwin* ]]; then
+  echo "Note: You're not on macOS. We'll generate an Xcode project you can open on a Mac."
 fi
 
-# Check if Xcode is installed (only on macOS)
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    if ! command -v xcodebuild &> /dev/null; then
-        echo "Error: Xcode is not installed"
-        exit 1
-    fi
-    
-    if ! command -v cmake &> /dev/null; then
-        echo "Error: CMake is not installed. Install via: brew install cmake"
-        exit 1
-    fi
+# macOS requirements
+if [[ "$OSTYPE" == darwin* ]]; then
+  if ! command -v xcodebuild >/dev/null 2>&1; then
+    echo "Error: Xcode command line tools not found. Install Xcode from the App Store, then run 'xcode-select --install'." >&2
+    exit 1
+  fi
+  if ! command -v cmake >/dev/null 2>&1; then
+    echo "Error: CMake is not installed. Install via Homebrew: 'brew install cmake'." >&2
+    exit 1
+  fi
 fi
 
-# Configuration
-BUILD_TYPE=${1:-Release}
-SCHEME="RacingGame3DiOS"
+mkdir -p "$BUILD_DIR" "$DIST_DIR"
 
-echo "Build Type: $BUILD_TYPE"
-
-# Create build directory
-BUILD_DIR="ios/build"
-mkdir -p "$BUILD_DIR"
-
-cd ios
-
-# Generate Xcode project with CMake
 echo "Generating Xcode project..."
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # Use Xcode generator on macOS
-    cmake -B build -G Xcode \
-        -DCMAKE_SYSTEM_NAME=iOS \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
-        -DCMAKE_OSX_ARCHITECTURES=arm64 \
-        -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
-        -DPLATFORM_IOS=1 \
-        -DPLATFORM_MOBILE=1
+if [[ "$OSTYPE" == darwin* ]]; then
+  # Use real Xcode generator on macOS
+  cmake -S "$IOS_DIR" -B "$BUILD_DIR" -G Xcode \
+    -DCMAKE_SYSTEM_NAME=iOS \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+    -DCMAKE_OSX_ARCHITECTURES=arm64 \
+    -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+    -DPLATFORM_IOS=1 \
+    -DPLATFORM_MOBILE=1
 else
-    # Create Xcode project structure manually on non-macOS systems
-    echo "Creating Xcode project structure for macOS transfer..."
-    
-    # Create build directory
-    mkdir -p build
-    
-    # Create the Xcode project bundle
-    mkdir -p "build/RacingGame3DiOS.xcodeproj"
-    
-    # Generate project.pbxproj file
-    cat > "build/RacingGame3DiOS.xcodeproj/project.pbxproj" << 'EOF'
+  # Create a lightweight Xcode project structure for transfer
+  echo "Creating portable Xcode project for transfer to macOS..."
+  mkdir -p "$BUILD_DIR/RacingGame3DiOS.xcodeproj"
+  # Generate minimal pbxproj with references to existing sources
+  cat > "$BUILD_DIR/RacingGame3DiOS.xcodeproj/project.pbxproj" << 'EOF'
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
@@ -496,11 +507,11 @@ else
 	rootObject = A1000001000000000000046 /* Project object */;
 }
 EOF
-    
-    # Create project.xcworkspace directory and contents
-    mkdir -p "build/RacingGame3DiOS.xcodeproj/project.xcworkspace"
-    
-    cat > "build/RacingGame3DiOS.xcodeproj/project.xcworkspace/contents.xcworkspacedata" << 'EOF'
+
+  # Create project.xcworkspace directory and contents
+  mkdir -p "$BUILD_DIR/RacingGame3DiOS.xcodeproj/project.xcworkspace"
+
+  cat > "$BUILD_DIR/RacingGame3DiOS.xcodeproj/project.xcworkspace/contents.xcworkspacedata" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
@@ -509,11 +520,11 @@ EOF
    </FileRef>
 </Workspace>
 EOF
-    
-    # Create xcschemes directory and scheme
-    mkdir -p "build/RacingGame3DiOS.xcodeproj/xcshareddata/xcschemes"
-    
-    cat > "build/RacingGame3DiOS.xcodeproj/xcshareddata/xcschemes/RacingGame3DiOS.xcscheme" << 'EOF'
+
+  # Create xcschemes directory and scheme
+  mkdir -p "$BUILD_DIR/RacingGame3DiOS.xcodeproj/xcshareddata/xcschemes"
+
+  cat > "$BUILD_DIR/RacingGame3DiOS.xcodeproj/xcshareddata/xcschemes/RacingGame3DiOS.xcscheme" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "1500"
@@ -592,54 +603,94 @@ EOF
    </ArchiveAction>
 </Scheme>
 EOF
-    
-    echo ""
-    echo "Note: Cross-compilation to iOS from non-macOS is not fully supported."
-    echo "The Xcode project has been generated for reference and transfer to macOS."
+
+  echo
+  echo "Note: Cross-compilation to iOS from non-macOS isn't supported."
+  echo "The Xcode project has been generated for transfer to a Mac."
 fi
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # Build for device
-    echo "Building for iOS device..."
-    xcodebuild -project build/RacingGame3DiOS.xcodeproj \
-        -scheme "$SCHEME" \
-        -configuration "$BUILD_TYPE" \
-        -sdk iphoneos \
-        -destination 'generic/platform=iOS' \
-        -allowProvisioningUpdates \
-        clean build
-    
-    echo ""
-    echo "========================================="
-    echo "iOS build completed successfully!"
-    echo "App bundle location: ios/build/$BUILD_TYPE-iphoneos/"
-    echo ""
-    echo "To install on device:"
-    echo "1. Open Xcode"
-    echo "2. Open the project: ios/build/RacingGame3DiOS.xcodeproj"
-    echo "3. Connect your iOS device via USB"
-    echo "4. Sign in with your Apple ID in Xcode (Preferences > Accounts)"
-    echo "5. Select your device from the target menu"
-    echo "6. Select a Development Team in the project settings"
-    echo "7. Click Run (⌘R)"
-    echo ""
-    echo "For installing on your iPhone:"
-    echo "- Connect iPhone via USB"
-    echo "- Trust this computer on iPhone if prompted"
-    echo "- In iPhone Settings > General > VPN & Device Management"
-    echo "  trust the developer certificate"
-    echo "========================================="
+if [[ "$OSTYPE" == darwin* ]]; then
+  echo "Building for iOS device..."
+  xcodebuild -project "$BUILD_DIR/RacingGame3DiOS.xcodeproj" \
+    -scheme "$SCHEME" \
+    -configuration "$BUILD_TYPE" \
+    -sdk iphoneos \
+    -destination 'generic/platform=iOS' \
+    -allowProvisioningUpdates \
+    clean build
+
+  APP_DIR="$BUILD_DIR/$BUILD_TYPE-iphoneos/$SCHEME.app"
+  echo "App bundle: $APP_DIR"
+
+  if $DO_INSTALL; then
+    echo "Archiving app for export..."
+    ARCHIVE_PATH="$DIST_DIR/$SCHEME.xcarchive"
+    xcodebuild -project "$BUILD_DIR/RacingGame3DiOS.xcodeproj" \
+      -scheme "$SCHEME" \
+      -configuration "$BUILD_TYPE" \
+      -sdk iphoneos \
+      -destination 'generic/platform=iOS' \
+      -archivePath "$ARCHIVE_PATH" \
+      -allowProvisioningUpdates \
+      archive
+
+    cat > "$DIST_DIR/ExportOptions.plist" << 'EOP'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>development</string>
+  <key>signingStyle</key>
+  <string>automatic</string>
+  <key>stripSwiftSymbols</key>
+  <true/>
+  <key>compileBitcode</key>
+  <false/>
+  <key>destination</key>
+  <string>export</string>
+  <key>iCloudContainerEnvironment</key>
+  <string>Development</string>
+</dict>
+</plist>
+EOP
+
+    echo "Exporting IPA..."
+    xcodebuild -exportArchive \
+      -archivePath "$ARCHIVE_PATH" \
+      -exportOptionsPlist "$DIST_DIR/ExportOptions.plist" \
+      -exportPath "$DIST_DIR"
+
+    IPA_PATH="$DIST_DIR/$SCHEME.ipa"
+    if [[ -f "$IPA_PATH" ]]; then
+      echo "IPA generated: $IPA_PATH"
+      if xcrun -f devicectl >/dev/null 2>&1; then
+        echo "Attempting to install to a connected device using devicectl..."
+        # Will prompt selection in Xcode if multiple devices; otherwise install to default connected device
+        set +e
+        xcrun devicectl device install app "$IPA_PATH" || true
+        set -e
+        echo "If installation did not start, open Xcode and run the app on your device."
+      elif command -v ios-deploy >/dev/null 2>&1; then
+        echo "Installing via ios-deploy..."
+        ios-deploy --bundle "$APP_DIR" --justlaunch || true
+      else
+        echo "To install: open the project in Xcode or install 'ios-deploy' via Homebrew."
+      fi
+    fi
+  fi
+
+  echo ""
+  echo "========================================="
+  echo "iOS build completed successfully!"
+  echo "Open this project in Xcode: $BUILD_DIR/RacingGame3DiOS.xcodeproj"
+  echo "Select your Team, then run on a device (⌘R)."
+  echo "========================================="
 else
-    echo ""
-    echo "========================================="
-    echo "Xcode project generated successfully!"
-    echo "Project location: ios/build/RacingGame3DiOS.xcodeproj"
-    echo ""
-    echo "Transfer this project to a Mac to build and install:"
-    echo "1. Copy the entire project folder to a Mac"
-    echo "2. Run this script on the Mac to build"
-    echo "3. Or open ios/build/RacingGame3DiOS.xcodeproj in Xcode"
-    echo "========================================="
+  echo ""
+  echo "========================================="
+  echo "Xcode project generated successfully!"
+  echo "Project location: $BUILD_DIR/RacingGame3DiOS.xcodeproj"
+  echo "Transfer the repo to a Mac, then run this same script or open in Xcode."
+  echo "========================================="
 fi
-
-cd ..
