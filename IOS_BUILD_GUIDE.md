@@ -38,19 +38,26 @@ If you're working on this project in a cloud environment (like GitHub Codespaces
 
 ---
 
-## Step 2: Generate Xcode Project
+## Step 2: Generate Xcode Project / Build
 
 Open Terminal on your Mac and navigate to the project directory:
 
 ```bash
 cd /path/to/RacingGame3D
-./build_ios.sh
+# Build project and optionally produce an .ipa (macOS only)
+./build_ios.sh                # generate + build
+./build_ios.sh --archive      # also create .xcarchive (Release)
+./build_ios.sh --ipa          # archive + export .ipa to ios/dist
+
+# Non-interactive export (optional)
+TEAM_ID=YOURTEAMID BUNDLE_ID=com.yourname.racing3d ./build_ios.sh --ipa
 ```
 
 This will:
 - Generate an Xcode project in `ios/build/RacingGame3DiOS.xcodeproj`
 - Configure all necessary iOS frameworks
 - Set up proper build settings
+- Optionally create `ios/dist/RacingGame3DiOS.xcarchive` and export an `.ipa` to `ios/dist`
 
 ---
 

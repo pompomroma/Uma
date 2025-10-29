@@ -15,14 +15,15 @@
 ### 1️⃣ On Mac Terminal
 ```bash
 cd /path/to/RacingGame3D
-./build_ios.sh
+# Build + archive + export IPA to ios/dist
+./build_ios.sh --ipa
 ```
 
 ### 2️⃣ Open Xcode
 ```bash
 open ios/build/RacingGame3DiOS.xcodeproj
 ```
-**Note**: If you built this on a non-macOS system, transfer the entire project folder to a Mac first, then open the `.xcodeproj` file in Xcode.
+**Note (Linux/Codespaces)**: Run `./build_ios.sh` to generate the project and a downloadable archive at `ios/dist/RacingGame3DiOS_XcodeProject.tar.gz`, move it to a Mac, then open the `.xcodeproj` in Xcode.
 
 ### 3️⃣ Configure Signing
 - Xcode → Preferences → Accounts → Add your Apple ID
@@ -51,7 +52,7 @@ open ios/build/RacingGame3DiOS.xcodeproj
 ## 🔧 Troubleshooting
 
 **"Xcode project not found" or "No such file"**
-→ Make sure you ran `./build_ios.sh` first to generate the project files
+→ Run `./build_ios.sh` from the repo root to generate the project files
 
 **"Untrusted Developer"**
 → Settings → General → VPN & Device Management → Trust
@@ -63,7 +64,7 @@ open ios/build/RacingGame3DiOS.xcodeproj
 → Normal with free Apple ID, just rebuild and reinstall
 
 **Built on non-macOS system**
-→ Transfer the entire project folder to a Mac, then open the `.xcodeproj` file in Xcode
+→ Download `ios/dist/RacingGame3DiOS_XcodeProject.tar.gz` to a Mac, extract, then open the `.xcodeproj` in Xcode
 
 ---
 
