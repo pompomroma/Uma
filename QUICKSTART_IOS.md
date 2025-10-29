@@ -8,11 +8,24 @@
 - USB cable
 - Free Apple ID
 
+### ⚠️ Important Note
+**If you're viewing this in GitHub Codespaces or on Linux**: You need to download/clone this project to your Mac first. iOS apps can only be built on macOS with Xcode.
+
 ---
 
 ## 📋 Quick Steps
 
 ### 1️⃣ On Mac Terminal
+```bash
+# Navigate to the project
+cd /path/to/RacingGame3D
+
+# Run the setup script
+./setup_ios.sh
+```
+**The setup script will guide you through the entire process!**
+
+### Alternative: Manual Build
 ```bash
 cd /path/to/RacingGame3D
 ./build_ios.sh
@@ -22,7 +35,6 @@ cd /path/to/RacingGame3D
 ```bash
 open ios/build/RacingGame3DiOS.xcodeproj
 ```
-**Note**: If you built this on a non-macOS system, transfer the entire project folder to a Mac first, then open the `.xcodeproj` file in Xcode.
 
 ### 3️⃣ Configure Signing
 - Xcode → Preferences → Accounts → Add your Apple ID
@@ -50,8 +62,18 @@ open ios/build/RacingGame3DiOS.xcodeproj
 
 ## 🔧 Troubleshooting
 
+**"Error: This script must be run from the project root directory!"**
+→ You're in the wrong directory. Run:
+```bash
+cd /path/to/RacingGame3D
+./setup_ios.sh
+```
+
 **"Xcode project not found" or "No such file"**
-→ Make sure you ran `./build_ios.sh` first to generate the project files
+→ Make sure you ran `./setup_ios.sh` or `./build_ios.sh` first to generate the project files
+
+**"Warning: You're not on macOS!"**
+→ iOS apps can only be built on Mac. Download this project to your Mac and run the setup script there
 
 **"Untrusted Developer"**
 → Settings → General → VPN & Device Management → Trust
@@ -61,9 +83,6 @@ open ios/build/RacingGame3DiOS.xcodeproj
 
 **App expires after 7 days**
 → Normal with free Apple ID, just rebuild and reinstall
-
-**Built on non-macOS system**
-→ Transfer the entire project folder to a Mac, then open the `.xcodeproj` file in Xcode
 
 ---
 

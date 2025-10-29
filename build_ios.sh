@@ -8,10 +8,26 @@ echo "========================================="
 echo "Building Racing Game 3D for iOS"
 echo "========================================="
 
+# Verify we're in the correct directory
+if [[ ! -d "ios" ]] || [[ ! -d "src" ]]; then
+    echo "❌ Error: This script must be run from the project root directory!"
+    echo ""
+    echo "Current directory: $PWD"
+    echo ""
+    echo "Please navigate to the project root first:"
+    echo "  cd /path/to/RacingGame3D"
+    echo "  ./build_ios.sh"
+    echo ""
+    echo "Or use the universal setup script:"
+    echo "  ./setup_ios.sh"
+    exit 1
+fi
+
 # Check if running on macOS
 if [[ "$OSTYPE" != "darwin"* ]]; then
-    echo "Warning: iOS builds should be performed on macOS"
+    echo "⚠️  Warning: iOS builds should be performed on macOS"
     echo "Generating Xcode project anyway for reference..."
+    echo ""
 fi
 
 # Check if Xcode is installed (only on macOS)
