@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Racing Game 3D - iOS Download</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .app-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin: 0 0 30px 0;
+            opacity: 0.9;
+        }
+        .download-btn {
+            display: inline-block;
+            background: #007AFF;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
+        }
+        .download-btn:hover {
+            background: #0056CC;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+        }
+        .instructions {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        .instructions h3 {
+            margin-top: 0;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .feature h4 {
+            margin: 0 0 10px 0;
+            color: #FFD700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-icon">🏎️</div>
+        <h1>Racing Game 3D</h1>
+        <p class="subtitle">High-speed 3D racing action on your iOS device</p>
+        
+        <a href="itms-services://?action=download-manifest&url=https://your-domain.com/manifest.plist" class="download-btn">
+            📱 Install on iOS
+        </a>
+        
+        <div class="warning">
+            <strong>⚠️ Developer Installation Required</strong><br>
+            This app requires manual installation via Xcode or TestFlight. Follow the instructions below.
+        </div>
+        
+        <div class="instructions">
+            <h3>Installation Instructions:</h3>
+            <ol>
+                <li><strong>For Developers:</strong> Open the Xcode project and build directly to your device</li>
+                <li><strong>For TestFlight:</strong> Contact the developer for TestFlight beta access</li>
+                <li><strong>For App Store:</strong> This app will be available on the App Store soon</li>
+                <li>Make sure your iOS device is running iOS 13.0 or later</li>
+                <li>Trust the developer certificate in Settings > General > VPN & Device Management</li>
+            </ol>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <h4>🎮 Touch Controls</h4>
+                <p>Intuitive touch controls optimized for mobile gaming</p>
+            </div>
+            <div class="feature">
+                <h4>🏁 3D Graphics</h4>
+                <p>Stunning 3D graphics powered by Metal rendering</p>
+            </div>
+            <div class="feature">
+                <h4>📱 iOS Optimized</h4>
+                <p>Built specifically for iPhone and iPad performance</p>
+            </div>
+            <div class="feature">
+                <h4>🎯 Combat System</h4>
+                <p>Engaging combat mechanics with projectiles and shields</p>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>System Requirements:</h3>
+            <ul>
+                <li>iOS 13.0 or later</li>
+                <li>iPhone 6s or later, iPad Air 2 or later</li>
+                <li>Metal-compatible graphics</li>
+                <li>At least 100MB free storage</li>
+            </ul>
+        </div>
+        
+        <p style="margin-top: 30px; opacity: 0.7;">
+            Version 1.0.0 | Built with ❤️ for iOS
+        </p>
+    </div>
+</body>
+</html>
