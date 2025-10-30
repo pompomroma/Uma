@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Game Center support (optional, can be enabled later) -->
+    <key>com.apple.developer.game-center</key>
+    <true/>
+    
+    <!-- Metal graphics support -->
+    <key>com.apple.security.device.metal</key>
+    <true/>
+    
+    <!-- Associated domains (if needed for universal links) -->
+    <!-- <key>com.apple.developer.associated-domains</key>
+    <array>
+        <string>applinks:yourdomain.com</string>
+    </array> -->
+    
+    <!-- iCloud support (if needed for cloud saves) -->
+    <!-- <key>com.apple.developer.icloud-container-identifiers</key>
+    <array>
+        <string>iCloud.com.racinggame.mobile</string>
+    </array>
+    <key>com.apple.developer.icloud-services</key>
+    <array>
+        <string>CloudDocuments</string>
+        <string>CloudKit</string>
+    </array> -->
+</dict>
+</plist>

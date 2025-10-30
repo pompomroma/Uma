@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Distribution method: app-store, ad-hoc, enterprise, or development -->
+    <key>method</key>
+    <string>app-store</string>
+    
+    <!-- Upload to App Store Connect -->
+    <key>uploadBitcode</key>
+    <false/>
+    
+    <key>uploadSymbols</key>
+    <true/>
+    
+    <!-- Code signing configuration -->
+    <key>signingStyle</key>
+    <string>automatic</string>
+    
+    <!-- App thinning -->
+    <key>compileBitcode</key>
+    <false/>
+    
+    <!-- Strip Swift symbols -->
+    <key>stripSwiftSymbols</key>
+    <true/>
+    
+    <!-- Team ID (leave empty for automatic signing) -->
+    <key>teamID</key>
+    <string></string>
+    
+    <!-- Provisioning profiles (leave empty for automatic signing) -->
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.racinggame.mobile</key>
+        <string></string>
+    </dict>
+    
+    <!-- Distribution bundle identifier -->
+    <key>signingCertificate</key>
+    <string>Apple Distribution</string>
+    
+    <!-- App Store destination -->
+    <key>destination</key>
+    <string>upload</string>
+</dict>
+</plist>

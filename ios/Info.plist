@@ -43,5 +43,17 @@
     <false/>
     <key>UIRequiresFullScreen</key>
     <true/>
+    <key>NSCameraUsageDescription</key>
+    <string>This game does not use the camera.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This game does not use the microphone.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>This game does not use location services.</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>CFBundleSpokenName</key>
+    <string>Racing Game 3D</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.games</string>
 </dict>
 </plist>
