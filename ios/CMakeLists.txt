@@ -53,9 +53,12 @@ add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
-    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.racinggame.mobile"
+    # Allow overriding bundle identifier via -DPRODUCT_BUNDLE_IDENTIFIER
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "$<IF:$<BOOL:${PRODUCT_BUNDLE_IDENTIFIER}>,${PRODUCT_BUNDLE_IDENTIFIER},com.racinggame.mobile>"
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
-    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
+    # Use automatic code signing; team can be provided at build time
+    XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+    # Leave DEVELOPMENT_TEAM empty here; pass via xcodebuild or set in Xcode UI
     XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
 )
 

@@ -31,6 +31,20 @@ fi
 BUILD_TYPE=${1:-Release}
 SCHEME="RacingGame3DiOS"
 
+# Optional environment overrides
+DEVELOPMENT_TEAM_ENV="${DEVELOPMENT_TEAM}"           # e.g. ABCDEFGHIJ
+BUNDLE_ID_ENV="${BUNDLE_ID}"                         # e.g. com.example.game
+APP_NAME_ENV="${APP_NAME:-RacingGame3DiOS}"
+EXPORT_METHOD="${EXPORT_METHOD}"                      # ad-hoc | app-store | enterprise | development
+ARCHIVE_PATH="ios/build/${SCHEME}.xcarchive"
+EXPORT_DIR="ios/build/export"
+IPA_OUTPUT_PATH="${EXPORT_DIR}/${APP_NAME_ENV}.ipa"
+GENERATE_OTA="${GENERATE_OTA}"                       # set to 1 to generate OTA files
+APP_URL="${APP_URL}"                                 # https URL where .ipa will be hosted
+ICON_URL="${ICON_URL}"                               # optional https URL to app icon PNG
+DISPLAY_NAME="${DISPLAY_NAME:-Racing Game 3D}"       # shown in OTA install sheet
+APP_VERSION_ENV="${APP_VERSION:-1.0}"                # marketing version
+
 echo "Build Type: $BUILD_TYPE"
 
 # Create build directory
@@ -49,7 +63,8 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         -DCMAKE_OSX_ARCHITECTURES=arm64 \
         -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
         -DPLATFORM_IOS=1 \
-        -DPLATFORM_MOBILE=1
+        -DPLATFORM_MOBILE=1 \
+        ${BUNDLE_ID_ENV:+-DPRODUCT_BUNDLE_IDENTIFIER=${BUNDLE_ID_ENV}}
 else
     # Create Xcode project structure manually on non-macOS systems
     echo "Creating Xcode project structure for macOS transfer..."
@@ -599,46 +614,186 @@ EOF
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    # Build for device
+    # Build or archive/export depending on provided environment flags
     echo "Building for iOS device..."
+
+    # Always do a clean build first to ensure scheme exists
     xcodebuild -project build/RacingGame3DiOS.xcodeproj \
         -scheme "$SCHEME" \
         -configuration "$BUILD_TYPE" \
         -sdk iphoneos \
         -destination 'generic/platform=iOS' \
+        ${DEVELOPMENT_TEAM_ENV:+DEVELOPMENT_TEAM=${DEVELOPMENT_TEAM_ENV}} \
+        ${BUNDLE_ID_ENV:+PRODUCT_BUNDLE_IDENTIFIER=${BUNDLE_ID_ENV}} \
         -allowProvisioningUpdates \
         clean build
-    
-    echo ""
-    echo "========================================="
-    echo "iOS build completed successfully!"
-    echo "App bundle location: ios/build/$BUILD_TYPE-iphoneos/"
-    echo ""
-    echo "To install on device:"
-    echo "1. Open Xcode"
-    echo "2. Open the project: ios/build/RacingGame3DiOS.xcodeproj"
-    echo "3. Connect your iOS device via USB"
-    echo "4. Sign in with your Apple ID in Xcode (Preferences > Accounts)"
-    echo "5. Select your device from the target menu"
-    echo "6. Select a Development Team in the project settings"
-    echo "7. Click Run (⌘R)"
-    echo ""
-    echo "For installing on your iPhone:"
-    echo "- Connect iPhone via USB"
-    echo "- Trust this computer on iPhone if prompted"
-    echo "- In iPhone Settings > General > VPN & Device Management"
-    echo "  trust the developer certificate"
-    echo "========================================="
+
+    # If EXPORT_METHOD is provided, perform archive and export to IPA
+    if [[ -n "$EXPORT_METHOD" ]]; then
+        echo "Archiving (xcarchive) for export method: $EXPORT_METHOD"
+        xcodebuild -project build/RacingGame3DiOS.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration "$BUILD_TYPE" \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            ${DEVELOPMENT_TEAM_ENV:+DEVELOPMENT_TEAM=${DEVELOPMENT_TEAM_ENV}} \
+            ${BUNDLE_ID_ENV:+PRODUCT_BUNDLE_IDENTIFIER=${BUNDLE_ID_ENV}} \
+            -archivePath "$ARCHIVE_PATH" \
+            -allowProvisioningUpdates \
+            archive
+
+        mkdir -p "$EXPORT_DIR"
+
+        # Generate ExportOptions.plist on the fly
+        EXPORT_OPTIONS_PLIST="$EXPORT_DIR/ExportOptions.plist"
+        cat > "$EXPORT_OPTIONS_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>${EXPORT_METHOD}</string>
+    <key>uploadSymbols</key>
+    <true/>
+    <key>compileBitcode</key>
+    <false/>
+    <key>destination</key>
+    <string>export</string>
+    <key>signingStyle</key>
+    <string>automatic</string>
+    <key>stripSwiftSymbols</key>
+    <true/>
+    <key>teamID</key>
+    <string>${DEVELOPMENT_TEAM_ENV}</string>
+    <key>thinning</key>
+    <string>&lt;none&gt;</string>
+</dict>
+</plist>
+EOF
+
+        echo "Exporting IPA to: $EXPORT_DIR"
+        xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_DIR" \
+            -exportOptionsPlist "$EXPORT_OPTIONS_PLIST" \
+            -allowProvisioningUpdates
+
+        # Try to locate the produced .ipa
+        FOUND_IPA=$(ls -1 "$EXPORT_DIR"/*.ipa 2>/dev/null | head -n1 || true)
+        if [[ -n "$FOUND_IPA" ]]; then
+            mv -f "$FOUND_IPA" "$IPA_OUTPUT_PATH" || true
+        fi
+
+        echo ""
+        echo "========================================="
+        if [[ -f "$IPA_OUTPUT_PATH" ]]; then
+            echo "IPA export completed: $IPA_OUTPUT_PATH"
+        else
+            echo "IPA export completed. Check $EXPORT_DIR for .ipa (name may vary)."
+        fi
+        echo "========================================="
+
+        # Optionally generate OTA manifest and landing page
+        if [[ "$GENERATE_OTA" == "1" ]]; then
+            if [[ -z "$APP_URL" ]]; then
+                echo "Warning: GENERATE_OTA=1 but APP_URL is not set (https URL to hosted .ipa). Skipping OTA files."
+            else
+                OTA_DIR="ios/build/ota"
+                mkdir -p "$OTA_DIR"
+                MANIFEST_PATH="$OTA_DIR/manifest.plist"
+
+                echo "Generating OTA manifest at: $MANIFEST_PATH"
+                cat > "$MANIFEST_PATH" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>items</key>
+  <array>
+    <dict>
+      <key>assets</key>
+      <array>
+        <dict>
+          <key>kind</key>
+          <string>software-package</string>
+          <key>url</key>
+          <string>${APP_URL}</string>
+        </dict>
+        ${ICON_URL:+<dict>
+          <key>kind</key>
+          <string>display-image</string>
+          <key>needs-shine</key>
+          <false/>
+          <key>url</key>
+          <string>${ICON_URL}</string>
+        </dict>}
+      </array>
+      <key>metadata</key>
+      <dict>
+        <key>bundle-identifier</key>
+        <string>${BUNDLE_ID_ENV:-com.racinggame.mobile}</string>
+        <key>bundle-version</key>
+        <string>${APP_VERSION_ENV}</string>
+        <key>kind</key>
+        <string>software</string>
+        <key>title</key>
+        <string>${DISPLAY_NAME}</string>
+      </dict>
+    </dict>
+  </array>
+</dict>
+</plist>
+EOF
+
+                # Simple landing page with itms-services link
+                cat > "$OTA_DIR/index.html" <<EOF
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${DISPLAY_NAME} - Install</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; padding: 40px; }
+      a.btn { display: inline-block; padding: 12px 18px; background: #0a84ff; color: #fff; border-radius: 10px; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <h1>${DISPLAY_NAME}</h1>
+    <p>Tap the button below on your iPhone to install:</p>
+    <p><a class="btn" href="itms-services://?action=download-manifest&url=MANIFEST_URL">Install ${DISPLAY_NAME}</a></p>
+  </body>
+</html>
+EOF
+
+                echo ""
+                echo "========================================="
+                echo "OTA files generated in: $OTA_DIR"
+                echo "- Upload ${IPA_OUTPUT_PATH} to your HTTPS host at: ${APP_URL}"
+                echo "- Replace MANIFEST_URL in $OTA_DIR/index.html with the HTTPS URL to $MANIFEST_PATH on your host"
+                echo "- Open the hosted index page in Safari on iOS to install (Ad Hoc or Enterprise signing required)"
+                echo "========================================="
+            fi
+        fi
+    else
+        echo ""
+        echo "========================================="
+        echo "iOS build completed successfully!"
+        echo "App bundle location: ios/build/$BUILD_TYPE-iphoneos/"
+        echo "To produce an installable .ipa without a PC connection, set EXPORT_METHOD and rerun, e.g.:"
+        echo "EXPORT_METHOD=ad-hoc DEVELOPMENT_TEAM=YOURTEAM BUNDLE_ID=com.example.game ./build_ios.sh Release"
+        echo "========================================="
+    fi
 else
     echo ""
     echo "========================================="
     echo "Xcode project generated successfully!"
     echo "Project location: ios/build/RacingGame3DiOS.xcodeproj"
     echo ""
-    echo "Transfer this project to a Mac to build and install:"
-    echo "1. Copy the entire project folder to a Mac"
-    echo "2. Run this script on the Mac to build"
-    echo "3. Or open ios/build/RacingGame3DiOS.xcodeproj in Xcode"
+    echo "Transfer this project to a Mac to build and export an IPA:"
+    echo "1. Copy the project to a Mac with Xcode and an Apple Developer account"
+    echo "2. On the Mac, run: EXPORT_METHOD=ad-hoc DEVELOPMENT_TEAM=YOURTEAM BUNDLE_ID=com.example.game ./build_ios.sh Release"
+    echo "3. The .ipa will be written to ios/build/export; optionally set GENERATE_OTA=1 and APP_URL to generate OTA files"
     echo "========================================="
 fi
 
