@@ -186,20 +186,49 @@ The game includes:
 
 ---
 
-## Building for Distribution (Optional)
+## Building for Distribution (No-PC install)
 
 If you want to share the game with others:
 
-### Option 1: TestFlight (Requires Apple Developer Program - $99/year)
+### Option 1: TestFlight (Recommended)
 1. Archive the app: Product → Archive
 2. Upload to App Store Connect
 3. Add beta testers
 4. They can install via TestFlight app
 
-### Option 2: Ad Hoc Distribution (Requires Apple Developer Program)
-1. Archive the app
-2. Export with Ad Hoc distribution
-3. Share .ipa file with specific device UDIDs
+Or use the included script on macOS to package an .ipa:
+
+```bash
+# On macOS in project root
+./build_ios.sh Release archive
+
+# Export signed IPA (replace with your Team ID)
+TEAM_ID=YOURTEAMID ./build_ios.sh Release package ad-hoc
+```
+
+The IPA will be under `ios/build/export/`.
+
+### Option 2: Ad Hoc OTA (No Mac-to-iPhone cable needed)
+1. Export the IPA as above (method `ad-hoc`)
+2. Host the `.ipa` on an HTTPS URL you control
+3. Generate OTA manifest:
+   ```bash
+   IPA_URL=https://your.domain/path/RacingGame3DiOS.ipa \
+   TITLE="Racing Game 3D" \
+   BUNDLE_ID=com.racinggame.mobile \
+   BUNDLE_VERSION=1.0 \
+   ./build_ios.sh Release ota
+   ```
+4. Upload `ios/build/export/manifest.plist` to the same HTTPS host
+5. On iPhone Safari, open:
+   ```
+   itms-services://?action=download-manifest&url=https://your.domain/path/manifest.plist
+   ```
+6. iOS will download and install the app over the air
+
+Notes:
+- You must add device UDIDs to your Ad Hoc provisioning profile
+- Use `TEAM_ID` env var when exporting so automatic signing can work
 
 ### Option 3: Development Install (Free, but limited)
 - Anyone can install on their device using their own Apple ID

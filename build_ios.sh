@@ -5,7 +5,7 @@
 set -e
 
 echo "========================================="
-echo "Building Racing Game 3D for iOS"
+echo "Racing Game 3D - iOS Build & Package"
 echo "========================================="
 
 # Check if running on macOS
@@ -29,9 +29,17 @@ fi
 
 # Configuration
 BUILD_TYPE=${1:-Release}
+ACTION=${2:-build} # build | archive | package | ota
+PACKAGE_METHOD=${3:-ad-hoc} # ad-hoc | app-store | development | enterprise
 SCHEME="RacingGame3DiOS"
+ARCHIVE_PATH="ios/build/RacingGame3DiOS.xcarchive"
+EXPORT_DIR="ios/build/export"
 
 echo "Build Type: $BUILD_TYPE"
+echo "Action: $ACTION"
+if [[ "$ACTION" == "package" || "$ACTION" == "archive" ]]; then
+  echo "Package Method: $PACKAGE_METHOD"
+fi
 
 # Create build directory
 BUILD_DIR="ios/build"
@@ -39,7 +47,7 @@ mkdir -p "$BUILD_DIR"
 
 cd ios
 
-# Generate Xcode project with CMake
+# Generate Xcode project with CMake (or scaffold when not on macOS)
 echo "Generating Xcode project..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # Use Xcode generator on macOS
@@ -599,46 +607,204 @@ EOF
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    # Build for device
-    echo "Building for iOS device..."
-    xcodebuild -project build/RacingGame3DiOS.xcodeproj \
-        -scheme "$SCHEME" \
-        -configuration "$BUILD_TYPE" \
-        -sdk iphoneos \
-        -destination 'generic/platform=iOS' \
-        -allowProvisioningUpdates \
-        clean build
-    
-    echo ""
-    echo "========================================="
-    echo "iOS build completed successfully!"
-    echo "App bundle location: ios/build/$BUILD_TYPE-iphoneos/"
-    echo ""
-    echo "To install on device:"
-    echo "1. Open Xcode"
-    echo "2. Open the project: ios/build/RacingGame3DiOS.xcodeproj"
-    echo "3. Connect your iOS device via USB"
-    echo "4. Sign in with your Apple ID in Xcode (Preferences > Accounts)"
-    echo "5. Select your device from the target menu"
-    echo "6. Select a Development Team in the project settings"
-    echo "7. Click Run (⌘R)"
-    echo ""
-    echo "For installing on your iPhone:"
-    echo "- Connect iPhone via USB"
-    echo "- Trust this computer on iPhone if prompted"
-    echo "- In iPhone Settings > General > VPN & Device Management"
-    echo "  trust the developer certificate"
-    echo "========================================="
+    # macOS: perform build/archive/package based on ACTION
+    if [[ "$ACTION" == "build" ]]; then
+        echo "Building for iOS device..."
+        xcodebuild -project build/RacingGame3DiOS.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration "$BUILD_TYPE" \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -allowProvisioningUpdates \
+            clean build
+
+        echo ""
+        echo "========================================="
+        echo "iOS build completed successfully!"
+        echo "App bundle location: ios/build/$BUILD_TYPE-iphoneos/"
+        echo "========================================="
+    fi
+
+    if [[ "$ACTION" == "archive" || "$ACTION" == "package" ]]; then
+        echo "Archiving..."
+        xcodebuild -project build/RacingGame3DiOS.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration "$BUILD_TYPE" \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -allowProvisioningUpdates \
+            clean archive \
+            -archivePath "$ARCHIVE_PATH"
+
+        echo "Archive created at: $ARCHIVE_PATH"
+    fi
+
+    if [[ "$ACTION" == "package" ]]; then
+        mkdir -p "$EXPORT_DIR"
+
+        # Read inputs for export
+        TEAM_ID_INPUT=${TEAM_ID:-}
+        BUNDLE_ID_INPUT=${BUNDLE_ID:-com.racinggame.mobile}
+
+        if [[ -z "$TEAM_ID_INPUT" ]]; then
+            echo "Error: TEAM_ID environment variable is required for packaging (ad-hoc/app-store/development/enterprise)."
+            echo "Find it in Apple Developer portal or Xcode (Team ID)."
+            exit 2
+        fi
+
+        EXPORT_PLIST="$EXPORT_DIR/ExportOptions.plist"
+        echo "Generating ExportOptions.plist for method: $PACKAGE_METHOD"
+        cat > "$EXPORT_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>$PACKAGE_METHOD</string>
+    <key>signingStyle</key>
+    <string>automatic</string>
+    <key>teamID</key>
+    <string>$TEAM_ID_INPUT</string>
+    <key>destination</key>
+    <string>export</string>
+    <key>manageAppVersionAndBuildNumber</key>
+    <true/>
+    <key>compileBitcode</key>
+    <false/>
+    <key>stripSwiftSymbols</key>
+    <true/>
+    <key>thinning</key>
+    <string>&lt;none&gt;</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>$BUNDLE_ID_INPUT</key>
+        <string></string>
+    </dict>
+EOF
+        # Extra keys for specific methods
+        if [[ "$PACKAGE_METHOD" == "app-store" ]]; then
+            cat >> "$EXPORT_PLIST" <<'EOF'
+    <key>uploadSymbols</key>
+    <true/>
+    <key>signingCertificate</key>
+    <string>Apple Distribution</string>
+EOF
+        fi
+        if [[ "$PACKAGE_METHOD" == "development" ]]; then
+            cat >> "$EXPORT_PLIST" <<'EOF'
+    <key>signingCertificate</key>
+    <string>Apple Development</string>
+EOF
+        fi
+        cat >> "$EXPORT_PLIST" <<'EOF'
+</dict>
+</plist>
+EOF
+
+        echo "Exporting .ipa to $EXPORT_DIR ..."
+        xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportOptionsPlist "$EXPORT_PLIST" \
+            -exportPath "$EXPORT_DIR" \
+            -allowProvisioningUpdates
+
+        echo ""
+        echo "========================================="
+        echo "IPA exported to: $EXPORT_DIR"
+        echo "Next steps:"
+        echo "- For TestFlight/App Store: Upload the .ipa via Xcode Organizer or 'xcrun altool'"
+        echo "- For Ad Hoc OTA: Host the .ipa and a manifest.plist on HTTPS and open itms-services link on device"
+        echo "========================================="
+    fi
+
+    if [[ "$ACTION" == "ota" ]]; then
+        mkdir -p "$EXPORT_DIR"
+        if [[ -z "$IPA_URL" ]]; then
+            echo "Error: Set IPA_URL to the HTTPS URL where the exported .ipa will be hosted."
+            echo "Example: IPA_URL=https://example.com/downloads/RacingGame3DiOS.ipa"
+            exit 3
+        fi
+        TITLE_INPUT=${TITLE:-"Racing Game 3D"}
+        ICON_URL_INPUT=${ICON_URL:-""}
+        BUNDLE_ID_INPUT=${BUNDLE_ID:-com.racinggame.mobile}
+        BUNDLE_VERSION_INPUT=${BUNDLE_VERSION:-1.0}
+
+        MANIFEST_PATH="$EXPORT_DIR/manifest.plist"
+        echo "Generating OTA manifest at: $MANIFEST_PATH"
+        cat > "$MANIFEST_PATH" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>items</key>
+  <array>
+    <dict>
+      <key>assets</key>
+      <array>
+        <dict>
+          <key>kind</key>
+          <string>software-package</string>
+          <key>url</key>
+          <string>$IPA_URL</string>
+        </dict>
+EOF
+        if [[ -n "$ICON_URL_INPUT" ]]; then
+            cat >> "$MANIFEST_PATH" <<EOF
+        <dict>
+          <key>kind</key>
+          <string>display-image</string>
+          <key>needs-shine</key>
+          <false/>
+          <key>url</key>
+          <string>$ICON_URL_INPUT</string>
+        </dict>
+        <dict>
+          <key>kind</key>
+          <string>full-size-image</string>
+          <key>needs-shine</key>
+          <false/>
+          <key>url</key>
+          <string>$ICON_URL_INPUT</string>
+        </dict>
+EOF
+        fi
+        cat >> "$MANIFEST_PATH" <<EOF
+      </array>
+      <key>metadata</key>
+      <dict>
+        <key>bundle-identifier</key>
+        <string>$BUNDLE_ID_INPUT</string>
+        <key>bundle-version</key>
+        <string>$BUNDLE_VERSION_INPUT</string>
+        <key>kind</key>
+        <string>software</string>
+        <key>title</key>
+        <string>$TITLE_INPUT</string>
+      </dict>
+    </dict>
+  </array>
+</dict>
+</plist>
+EOF
+        echo ""
+        echo "========================================="
+        echo "OTA manifest generated. Host both the .ipa and manifest on HTTPS."
+        echo "Install URL (open on iOS Safari):"
+        echo "itms-services://?action=download-manifest&url=YOUR_HTTPS_URL_TO/manifest.plist"
+        echo "========================================="
+    fi
 else
     echo ""
     echo "========================================="
     echo "Xcode project generated successfully!"
     echo "Project location: ios/build/RacingGame3DiOS.xcodeproj"
     echo ""
-    echo "Transfer this project to a Mac to build and install:"
-    echo "1. Copy the entire project folder to a Mac"
-    echo "2. Run this script on the Mac to build"
-    echo "3. Or open ios/build/RacingGame3DiOS.xcodeproj in Xcode"
+    echo "To build/archive/export, transfer this project to a Mac and run:"
+    echo "  ./build_ios.sh [Debug|Release] build"
+    echo "  ./build_ios.sh [Debug|Release] archive"
+    echo "  TEAM_ID=YOURTEAMID ./build_ios.sh [Debug|Release] package [ad-hoc|app-store|development|enterprise]"
+    echo "  IPA_URL=https://example.com/app.ipa ./build_ios.sh [Debug|Release] ota"
+    echo "(Set BUNDLE_ID if you've customized it)"
     echo "========================================="
 fi
 
